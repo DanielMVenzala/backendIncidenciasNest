@@ -72,6 +72,7 @@ export class IncidentsController {
     return this.incidentsService.remove(id);
   }
 
+  //Método para generar un reporte en excel (hace falta ser admin)
   @Get('report/excel')
   @SetMetadata('rol', 'admin')
   @RoleProtected(ValidRoles.admin)
@@ -80,10 +81,10 @@ export class IncidentsController {
     @Query() query: FindIncidentsQueryDto,
     @Res() res: Response,
   ) {
-    // Llamamos al método que NO formatea
+    //Llamamos al find que no formatea la data
     const incidents = await this.incidentsService.findAllEntities({
       ...query,
-      limit: 1000, // Aumentamos el límite para el reporte
+      limit: 1000,
     });
 
     const buffer = await this.reportsService.generateIncidentsExcel(incidents);

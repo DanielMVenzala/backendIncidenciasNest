@@ -21,8 +21,8 @@ import { CloudinaryService } from 'src/common/services/cloudinary-service';
 export class IncidentsService {
   //Para mostrar los errores de forma sencilla
   private readonly logger = new Logger('UsersService');
-  //Inyectar el repositorio
 
+  //Inyectar los diferentes repositorios
   constructor(
     @InjectRepository(Incident)
     private readonly incidentRepository: Repository<Incident>,
@@ -73,6 +73,7 @@ export class IncidentsService {
     return this.formatIncident(incident);
   }
 
+  //Método para mostrar el incidente de una determinada manera
   private formatIncident(incident: Incident) {
     return {
       ...incident,
@@ -215,11 +216,6 @@ export class IncidentsService {
     return await queryBuilder.getMany();
   }
 
-  // async remove(id: string) {
-  //   const incident = await this.findOneEntity(id); // Obtenemos la entidad real
-  //   await this.incidentRepository.remove(incident);
-  // }
-
   async remove(id: string) {
     //Buscamos el incidente con sus imágenes antes de eliminarlo
     const incident = await this.findOneEntity(id);
@@ -237,7 +233,7 @@ export class IncidentsService {
       await Promise.all(deletePromises);
     }
 
-    //Borrado en Base de Datos
+    //Borrado en base de datos
     await this.incidentRepository.remove(incident);
 
     return {

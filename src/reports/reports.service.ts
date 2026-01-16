@@ -5,14 +5,14 @@ import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class ReportsService {
-  //Recibimos el array de incidentes
+  //Generar reporte de incidentes
   async generateIncidentsExcel(incidents: Incident[]) {
     //Workbook es el propio archivo de excel
     const workbook = new ExcelJS.Workbook();
     //Las diferentes pestañas que se crea en la parte inferior de un documento excel
     const worksheet = workbook.addWorksheet('Incidentes Martos');
 
-    //Definir las columnas
+    //Definir las columnas del reporte
     worksheet.columns = [
       { header: 'ID', key: 'id', width: 10 },
       { header: 'Título', key: 'titulo', width: 30 },
@@ -48,6 +48,7 @@ export class ReportsService {
     return await workbook.xlsx.writeBuffer();
   }
 
+  //Generar reporte de usuarios
   async generateUsersExcel(users: User[]) {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Usuarios Registrados');

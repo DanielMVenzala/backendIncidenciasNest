@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 
+//Configuración para conectar a Cloudinary (subida de imágenes)
 export const CloudinaryProvider = {
   provide: 'CLOUDINARY',
   useFactory: () => {

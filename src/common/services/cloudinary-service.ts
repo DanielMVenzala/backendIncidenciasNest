@@ -6,6 +6,7 @@ import {
 } from 'cloudinary';
 import toStream = require('buffer-to-stream');
 
+//Métodos para subir y borrar una imagen en Cloudinary
 @Injectable()
 export class CloudinaryService {
   async uploadImage(
