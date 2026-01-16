@@ -20,5 +20,11 @@ docker-compose up -d
 7. Ejecutar SEED
 
 ```
-http://localhost:3000/api/v1/seed
+https://backendincidenciasnest.onrender.com/api/v1/seed
+```
+
+8. Consulta de endpoints
+
+```
+https://backendincidenciasnest.onrender.com/api
 ```
