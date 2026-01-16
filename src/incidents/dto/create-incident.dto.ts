@@ -3,6 +3,7 @@ import { IncidentImage } from '../entities/incident-image.entity';
 import { User } from 'src/users/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
+//Cómo se puede recibir la info a la hora de crear un incidente
 export class CreateIncidentDto {
   @ApiProperty({
     description: 'Incident title',

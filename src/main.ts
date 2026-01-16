@@ -15,6 +15,7 @@ async function bootstrap() {
     }),
   );
 
+  //Configuración para crear la documentación de endpoints
   const config = new DocumentBuilder()
     .setTitle('INCIDENTS RESTFUL API')
     .setDescription('Martos incidents endpoints')

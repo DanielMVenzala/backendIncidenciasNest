@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsOptional, IsPositive, Min } from 'class-validator';
 
+//DTO para establecer la paginación y el offset
 export class PaginationDto {
   @ApiProperty({
     default: 10,

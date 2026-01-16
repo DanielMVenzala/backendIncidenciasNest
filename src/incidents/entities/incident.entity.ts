@@ -24,6 +24,7 @@ export enum IncidentPriority {
   BAJA = 'baja',
 }
 
+//Construcción de la bdd de incidentes en postgres
 @Entity({ name: 'incidents' })
 export class Incident {
   @ApiProperty({

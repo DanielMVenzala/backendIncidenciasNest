@@ -12,11 +12,11 @@ export class SeedService {
     private readonly userService: UsersService,
   ) {}
   async runSeed() {
-    await this.insertNewIncidents();
+    await this.insertIncidentsAndUsers();
     return `Seed executed`;
   }
 
-  private async insertNewIncidents() {
+  private async insertIncidentsAndUsers() {
     await this.incidentService.deleteAllIncidences();
     await this.userService.deleteAllUsers();
 

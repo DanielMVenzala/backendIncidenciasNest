@@ -8,7 +8,6 @@ import { SeedModule } from './seed/seed.module';
 import { FilesModule } from './files/files.module';
 
 @Module({
-  //Establecer variables de entorno
   imports: [
     ConfigModule.forRoot(),
 

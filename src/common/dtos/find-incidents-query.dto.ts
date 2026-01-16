@@ -22,6 +22,7 @@ export enum IncidentOrderBy {
   actualizadoEn = 'actualizadoEn',
 }
 
+//DTO para establecer los filtros de búsqueda de incidentes
 export class FindIncidentsQueryDto extends PaginationDto {
   @IsString()
   @IsOptional()
@@ -53,11 +54,9 @@ export class FindIncidentsQueryDto extends PaginationDto {
 
   @IsOptional()
   @IsEnum(IncidentOrderBy)
-  //Si viene orderBy tiene que ser creadoEn o actualizadoEn
   orderBy?: IncidentOrderBy;
 
   @IsOptional()
   @IsEnum(OrderDirection)
-  //Si viene order tiene que ser ASC o DESC
   order?: OrderDirection;
 }

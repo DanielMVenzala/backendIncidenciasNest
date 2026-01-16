@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Incident } from './incident.entity';
 
+//DTO para la creación de imágenes
 @Entity({ name: 'incident_images' })
 export class IncidentImage {
   @PrimaryGeneratedColumn()

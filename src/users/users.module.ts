@@ -23,6 +23,7 @@ import { ReportsModule } from 'src/reports/reports.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
+      //Validez del token
       useFactory: (configService: ConfigService) => {
         return {
           secret: configService.get('JWT_SECRET'),

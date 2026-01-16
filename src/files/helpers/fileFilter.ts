@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
+//Filtros para la subida de imágenes
 export const fileFilter = (
   req: Express.Request,
   file: Express.Multer.File,

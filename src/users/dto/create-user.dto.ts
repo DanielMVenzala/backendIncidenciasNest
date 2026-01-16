@@ -37,8 +37,4 @@ export class CreateUserDto {
       'The password must have a Uppercase, lowercase letter and a number',
   })
   clave: string;
-
-  // @IsString()
-  // @IsOptional()
-  // avatar?: string;
 }

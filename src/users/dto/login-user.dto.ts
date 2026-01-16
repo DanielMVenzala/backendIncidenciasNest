@@ -7,7 +7,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-//Cómo vamos a construir cada usuario en la insercción
+//Cómo vamos a hacer el login
 export class LoginUserDto {
   @ApiProperty({
     description: 'User email',
