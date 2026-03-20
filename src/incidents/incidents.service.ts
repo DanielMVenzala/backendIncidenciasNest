@@ -40,11 +40,6 @@ export class IncidentsService {
   async create(createIncidentDto: CreateIncidentDto) {
     const { imagenes = [], usuario, prioridad, ...incidentDetails } = createIncidentDto;
 
-    //Si el front envía 'critica', se mapea a 'alta' (el backend no maneja 'critica')
-    const prioridadFinal: IncidentPriority = prioridad === 'critica'
-      ? IncidentPriority.ALTA
-      : (prioridad as unknown as IncidentPriority) ?? IncidentPriority.MEDIA;
-
     try {
       const user = await this.userRepository.findOneBy({
         email: usuario,
@@ -55,7 +50,7 @@ export class IncidentsService {
       //Se devuelven todas las propiedades y de las imágenes solo se devuelve la url
       const newIncident = this.incidentRepository.create({
         ...incidentDetails,
-        prioridad: prioridadFinal,
+        prioridad: prioridad ?? IncidentPriority.MEDIA,
         imagenes: imagenes.map((imagen) =>
           this.incidentImageRepository.create({ url: imagen }),
         ),
@@ -91,13 +86,6 @@ export class IncidentsService {
   async update(id: string, updateIncidentDto: UpdateIncidentDto) {
     const { imagenes, usuario, prioridad, ...toUpdate } = updateIncidentDto;
 
-    //Mapear 'critica' a 'alta' también en update
-    const prioridadFinal: IncidentPriority | undefined = prioridad === 'critica'
-      ? IncidentPriority.ALTA
-      : prioridad
-        ? (prioridad as unknown as IncidentPriority)
-        : undefined;
-
     const incident = await this.findOneEntity(id);
     const queryRunner = this.dataSource.createQueryRunner();
 
@@ -131,7 +119,7 @@ export class IncidentsService {
       const updatedIncident = await queryRunner.manager.preload(Incident, {
         id,
         ...toUpdate,
-        ...(prioridadFinal && { prioridad: prioridadFinal }),
+        ...(prioridad && { prioridad }),
         imagenes: incident.imagenes,
       });
 

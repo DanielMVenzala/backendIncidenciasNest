@@ -5,14 +5,6 @@ import { User } from 'src/users/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { IncidentPriority } from '../entities/incident.entity';
 
-//Enum extendido que acepta 'critica' desde el front
-export enum InputPriority {
-  CRITICA = 'critica',
-  ALTA = 'alta',
-  MEDIA = 'media',
-  BAJA = 'baja',
-}
-
 //Cómo se puede recibir la info a la hora de crear un incidente
 export class CreateIncidentDto {
   @ApiProperty({
@@ -54,14 +46,14 @@ export class CreateIncidentDto {
   imagenes: string[];
 
   @ApiProperty({
-    description: 'Incident priority (critica se mapea a alta)',
-    enum: InputPriority,
-    default: InputPriority.MEDIA,
+    description: 'Incident priority',
+    enum: IncidentPriority,
+    default: IncidentPriority.MEDIA,
     required: false,
   })
   @IsOptional()
-  @IsEnum(InputPriority)
-  prioridad?: InputPriority;
+  @IsEnum(IncidentPriority)
+  prioridad?: IncidentPriority;
 
   //Cuando se crea un incidente en postman se introduce un string(email) no un User
   @ApiProperty()

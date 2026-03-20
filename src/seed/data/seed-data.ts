@@ -25,6 +25,11 @@ export const initialData: SeedData = {
       clave: 'Garc1a_2024!',
     },
     {
+      nombre: 'Daniel MV',
+      email: 'admin@admin.com',
+      clave: 'Admin_1234',
+    },
+    {
       nombre: 'Valentina Rodríguez Silva',
       email: 'v.rodriguez@servidor.es',
       clave: 'Valen_Rod92',

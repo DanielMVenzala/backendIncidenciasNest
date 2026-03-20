@@ -15,9 +15,11 @@ export enum IncidentState {
   PENDIENTE = 'pendiente',
   EN_PROGRESO = 'en progreso',
   RESUELTO = 'resuelto',
+  RECHAZADA = 'rechazada',
 }
 
 export enum IncidentPriority {
+  CRITICA = 'critica',
   ALTA = 'alta',
   MEDIA = 'media',
   BAJA = 'baja',
