@@ -15,6 +15,7 @@ import {
 import { IncidentsService } from './incidents.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
 import { FindIncidentsQueryDto } from 'src/common/dtos/find-incidents-query.dto';
 import { RoleProtected } from 'src/users/decorators/role-protected/role-protected.decorator';
 import { ValidRoles } from 'src/users/interfaces/valid-roles';
@@ -62,6 +63,22 @@ export class IncidentsController {
     @Body() updateIncidentDto: UpdateIncidentDto,
   ) {
     return this.incidentsService.update(id, updateIncidentDto);
+  }
+
+  // ─── Comentarios ─────────────────────────────────────────
+
+  @Post(':id/comments')
+  @ApiResponse({ status: 201, description: 'Comment added' })
+  addComment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() createCommentDto: CreateCommentDto,
+  ) {
+    return this.incidentsService.addComment(id, createCommentDto);
+  }
+
+  @Get(':id/comments')
+  getComments(@Param('id', ParseUUIDPipe) id: string) {
+    return this.incidentsService.getComments(id);
   }
 
   @Delete(':id')

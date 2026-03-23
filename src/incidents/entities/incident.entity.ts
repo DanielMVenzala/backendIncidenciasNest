@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { IncidentImage } from './incident-image.entity';
+import { IncidentComment } from './incident-comment.entity';
 import { User } from 'src/users/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -102,6 +103,12 @@ export class Incident {
   })
   //IncidentImagen es: { id: string; url: string; incidentId: Incident }
   imagenes: IncidentImage[];
+
+  @OneToMany(() => IncidentComment, (comment) => comment.incidencia, {
+    cascade: true,
+    eager: true,
+  })
+  comentarios: IncidentComment[];
 
   //La nueva columna que se crea es de tipo User
   @ApiProperty({ type: () => User })

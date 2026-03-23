@@ -14,8 +14,10 @@ import { isUUID } from 'class-validator';
 import { FindIncidentsQueryDto } from 'src/common/dtos/find-incidents-query.dto';
 import { off } from 'process';
 import { IncidentImage } from './entities/incident-image.entity';
+import { IncidentComment } from './entities/incident-comment.entity';
 import { User } from 'src/users/entities/user.entity';
 import { CloudinaryService } from 'src/common/services/cloudinary-service';
+import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Injectable()
 export class IncidentsService {
@@ -29,6 +31,9 @@ export class IncidentsService {
 
     @InjectRepository(IncidentImage)
     private readonly incidentImageRepository: Repository<IncidentImage>,
+
+    @InjectRepository(IncidentComment)
+    private readonly commentRepository: Repository<IncidentComment>,
 
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -79,6 +84,14 @@ export class IncidentsService {
     return {
       ...incident,
       imagenes: (incident.imagenes || []).map((img) => img.url),
+      comentarios: (incident.comentarios || []).map((c) => ({
+        id: c.id,
+        texto: c.texto,
+        creadoEn: c.creadoEn,
+        autor: c.autor
+          ? { id: c.autor.id, nombre: c.autor.nombre }
+          : null,
+      })),
       usuario: incident.usuario?.id,
     };
   }
@@ -141,7 +154,7 @@ export class IncidentsService {
   private async findOneEntity(id: string) {
     const incident = await this.incidentRepository.findOne({
       where: { id },
-      relations: ['imagenes', 'usuario'],
+      relations: ['imagenes', 'usuario', 'comentarios', 'comentarios.autor'],
     });
 
     if (!incident)
@@ -167,7 +180,9 @@ export class IncidentsService {
     const queryBuilder = this.incidentRepository
       .createQueryBuilder('incident')
       .leftJoinAndSelect('incident.imagenes', 'imagenes')
-      .leftJoinAndSelect('incident.usuario', 'usuario');
+      .leftJoinAndSelect('incident.usuario', 'usuario')
+      .leftJoinAndSelect('incident.comentarios', 'comentarios')
+      .leftJoinAndSelect('comentarios.autor', 'comentarioAutor');
 
     //Se analizan todos los supuestos y se ejecutan las consultas en postgresql
     if (search) {
@@ -241,6 +256,54 @@ export class IncidentsService {
     return {
       message: `Incidente con ID ${id} y sus imágenes han sido eliminados.`,
     };
+  }
+
+  // ─── Comentarios ─────────────────────────────────────────
+
+  async addComment(incidentId: string, createCommentDto: CreateCommentDto) {
+    const incident = await this.findOneEntity(incidentId);
+
+    const user = await this.userRepository.findOneBy({
+      email: createCommentDto.usuario,
+    });
+    if (!user) {
+      throw new NotFoundException(
+        `User with email ${createCommentDto.usuario} not found`,
+      );
+    }
+
+    const comment = this.commentRepository.create({
+      texto: createCommentDto.texto,
+      incidencia: incident,
+      autor: user,
+    });
+
+    await this.commentRepository.save(comment);
+
+    return {
+      id: comment.id,
+      texto: comment.texto,
+      creadoEn: comment.creadoEn,
+      autor: { id: user.id, nombre: user.nombre },
+    };
+  }
+
+  async getComments(incidentId: string) {
+    // Verificar que la incidencia existe
+    await this.findOneEntity(incidentId);
+
+    const comments = await this.commentRepository.find({
+      where: { incidencia: { id: incidentId } },
+      relations: ['autor'],
+      order: { creadoEn: 'ASC' },
+    });
+
+    return comments.map((c) => ({
+      id: c.id,
+      texto: c.texto,
+      creadoEn: c.creadoEn,
+      autor: c.autor ? { id: c.autor.id, nombre: c.autor.nombre } : null,
+    }));
   }
 
   //Excepciones controladas

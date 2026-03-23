@@ -4,6 +4,7 @@ import { IncidentsController } from './incidents.controller';
 import { Incident } from './entities/incident.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IncidentImage } from './entities/incident-image.entity';
+import { IncidentComment } from './entities/incident-comment.entity';
 import { User } from 'src/users/entities/user.entity';
 import { FilesModule } from 'src/files/files.module';
 import { UsersModule } from 'src/users/users.module';
@@ -13,7 +14,7 @@ import { ReportsModule } from 'src/reports/reports.module';
   controllers: [IncidentsController],
   providers: [IncidentsService],
   imports: [
-    TypeOrmModule.forFeature([Incident, IncidentImage, User]),
+    TypeOrmModule.forFeature([Incident, IncidentImage, IncidentComment, User]),
     FilesModule,
     UsersModule,
     ReportsModule,
