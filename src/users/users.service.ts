@@ -44,11 +44,16 @@ export class UsersService {
       await this.userRepository.save(newUser);
 
       // Enviar email de activación en segundo plano (no bloquea la respuesta)
+      console.log(`[MAIL] Enviando email de activación a ${newUser.email}...`);
       this.mailService.sendActivationEmail(
         newUser.email,
         newUser.nombre,
         activationToken,
-      ).catch((err) => console.error('Error al enviar email de activación:', err));
+      ).then(() => {
+        console.log(`[MAIL] Email enviado correctamente a ${newUser.email}`);
+      }).catch((err) => {
+        console.error(`[MAIL] Error al enviar email a ${newUser.email}:`, err.message);
+      });
 
       return {
         id: newUser.id,
