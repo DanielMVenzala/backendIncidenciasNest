@@ -6,11 +6,12 @@ export class MailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
+    const mailPass = (process.env.MAIL_PASS || '').replace(/\s/g, '');
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        pass: mailPass,
       },
     });
   }
