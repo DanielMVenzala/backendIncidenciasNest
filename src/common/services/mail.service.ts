@@ -1,26 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
-  private transporter: nodemailer.Transporter;
+  private resend: Resend;
 
   constructor() {
-    const mailPass = (process.env.MAIL_PASS || '').replace(/\s/g, '');
-    this.transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: mailPass,
-      },
-    });
+    this.resend = new Resend(process.env.RESEND_API_KEY);
   }
 
   async sendActivationEmail(to: string, nombre: string, token: string) {
     const activationUrl = `${process.env.HOST_API || 'http://localhost:3000/api/v1'}/users/activate/${token}`;
 
-    await this.transporter.sendMail({
-      from: `"Incidencias Martos" <${process.env.MAIL_USER}>`,
+    await this.resend.emails.send({
+      from: 'Incidencias Martos <onboarding@resend.dev>',
       to,
       subject: 'Activa tu cuenta — Incidencias Martos',
       html: `
