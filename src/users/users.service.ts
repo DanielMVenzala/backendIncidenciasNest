@@ -93,7 +93,7 @@ export class UsersService {
       where: { id },
       relations: ['incidentes'],
     });
-    if (!user) throw new NotFoundException(`User with id ${id} not found`);
+    if (!user) throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     return user;
   }
 
@@ -144,7 +144,7 @@ export class UsersService {
       ...updateUserDto,
     });
 
-    if (!user) throw new NotFoundException(`User with id ${id} not found`);
+    if (!user) throw new NotFoundException(`Usuario con id ${id} no encontrado`);
 
     try {
       await this.userRepository.save(user);
@@ -168,10 +168,10 @@ export class UsersService {
     });
 
     if (!user)
-      throw new UnauthorizedException('Crendentials are not valid (email)');
+      throw new UnauthorizedException('Credenciales no válidas');
 
     if (!bcrypt.compareSync(clave, user.clave))
-      throw new UnauthorizedException('Crendentials are not valid (password)');
+      throw new UnauthorizedException('Credenciales no válidas');
 
     if (!user.activo)
       throw new UnauthorizedException('Cuenta no activada. Revisa tu correo electrónico.');
@@ -195,7 +195,7 @@ export class UsersService {
     if (error.code === '23505') throw new BadRequestException(error.detail);
     this.logger.error(error);
     throw new InternalServerErrorException(
-      'Unexpected error, check server logs',
+      'Error inesperado en el servidor',
     );
   }
 

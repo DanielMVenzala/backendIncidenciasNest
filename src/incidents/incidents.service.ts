@@ -50,7 +50,7 @@ export class IncidentsService {
         email: usuario,
       });
       if (!user) {
-        throw new NotFoundException(`User with email ${usuario} not found`);
+        throw new NotFoundException(`Usuario con email ${usuario} no encontrado`);
       }
       //Se devuelven todas las propiedades y de las imágenes solo se devuelve la url
       const newIncident = this.incidentRepository.create({
@@ -158,7 +158,7 @@ export class IncidentsService {
     });
 
     if (!incident)
-      throw new NotFoundException(`Incident with id ${id} not found`);
+      throw new NotFoundException(`Incidencia con id ${id} no encontrada`);
 
     return incident;
   }
@@ -313,7 +313,7 @@ export class IncidentsService {
     if (error.code === '23505') throw new BadRequestException(error.detail);
     this.logger.error(error);
     throw new InternalServerErrorException(
-      'Unexpected error, check server logs',
+      'Error inesperado en el servidor',
     );
   }
 

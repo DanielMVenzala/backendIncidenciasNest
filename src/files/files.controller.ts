@@ -34,7 +34,7 @@ export class FilesController {
   //Método que llama al upload del servicio de Cloudinary
   async uploadIncidentImage(@UploadedFile() file: Express.Multer.File) {
     if (!file)
-      throw new BadRequestException('Make sure that the file is an image');
+      throw new BadRequestException('Asegúrate de que el archivo sea una imagen');
 
     const result = await this.cloudinaryService.uploadImage(file);
     return {
