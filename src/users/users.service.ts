@@ -43,12 +43,12 @@ export class UsersService {
       });
       await this.userRepository.save(newUser);
 
-      // Enviar email de activación
-      await this.mailService.sendActivationEmail(
+      // Enviar email de activación en segundo plano (no bloquea la respuesta)
+      this.mailService.sendActivationEmail(
         newUser.email,
         newUser.nombre,
         activationToken,
-      );
+      ).catch((err) => console.error('Error al enviar email de activación:', err));
 
       return {
         id: newUser.id,
