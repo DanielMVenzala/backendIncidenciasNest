@@ -9,10 +9,11 @@ import { User } from './entities/user.entity';
 import { config } from 'process';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { ReportsModule } from 'src/reports/reports.module';
+import { MailService } from 'src/common/services/mail.service';
 
 @Module({
   controllers: [UsersController],
-  providers: [UsersService, JwtStrategy],
+  providers: [UsersService, JwtStrategy, MailService],
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([User]),

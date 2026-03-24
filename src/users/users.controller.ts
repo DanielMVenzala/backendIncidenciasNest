@@ -57,6 +57,30 @@ export class UsersController {
     return this.usersService.login(loginUserDto);
   }
 
+  @Get('activate/:token')
+  @ApiResponse({ status: 200, description: 'Account activated' })
+  @ApiResponse({ status: 400, description: 'Invalid token' })
+  async activateAccount(
+    @Param('token') token: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.usersService.activateAccount(token);
+    // Devolver HTML para que el usuario vea confirmación en el navegador
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`
+      <html>
+        <head><meta charset="utf-8"><title>Cuenta activada</title></head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #FAF7F2;">
+          <div style="text-align: center; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+            <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+            <h2 style="color: #2C5F7C; margin: 0 0 8px;">¡Cuenta activada!</h2>
+            <p style="color: #6B6B6B;">Ya puedes iniciar sesión en la app.</p>
+          </div>
+        </body>
+      </html>
+    `);
+  }
+
   @Delete(':id')
   @SetMetadata('rol', 'admin')
   @RoleProtected(ValidRoles.admin)

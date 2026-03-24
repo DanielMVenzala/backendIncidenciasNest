@@ -16,7 +16,9 @@ import { User } from './entities/user.entity';
 import { FindUsersQueryDto } from 'src/common/dtos/find-users-query.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import * as bcrypt from 'bcrypt';
+import { v4 as uuid } from 'uuid';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { MailService } from 'src/common/services/mail.service';
 
 @Injectable()
 export class UsersService {
@@ -28,20 +30,49 @@ export class UsersService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
     try {
-      const newUser = this.userRepository.create(createUserDto);
+      const activationToken = uuid();
+      const newUser = this.userRepository.create({
+        ...createUserDto,
+        activo: false,
+        activationToken,
+      });
       await this.userRepository.save(newUser);
 
+      // Enviar email de activación
+      await this.mailService.sendActivationEmail(
+        newUser.email,
+        newUser.nombre,
+        activationToken,
+      );
+
       return {
-        ...newUser,
-        token: this.getJwtToken({ id: newUser.id }),
+        id: newUser.id,
+        nombre: newUser.nombre,
+        email: newUser.email,
+        mensaje: 'Se ha enviado un correo de activación a tu email',
       };
     } catch (error) {
       this.handleDBExceptions(error);
     }
+  }
+
+  async activateAccount(token: string) {
+    const user = await this.userRepository.findOneBy({ activationToken: token });
+
+    if (!user) {
+      throw new BadRequestException('Token de activación inválido');
+    }
+
+    user.activo = true;
+    user.activationToken = null;
+    await this.userRepository.save(user);
+
+    return { mensaje: 'Cuenta activada correctamente. Ya puedes iniciar sesión.' };
   }
 
   async findAll(query: FindUsersQueryDto) {
@@ -133,7 +164,7 @@ export class UsersService {
 
     const user = await this.userRepository.findOne({
       where: { email },
-      select: { email: true, clave: true, id: true },
+      select: { email: true, clave: true, id: true, activo: true },
     });
 
     if (!user)
@@ -142,8 +173,12 @@ export class UsersService {
     if (!bcrypt.compareSync(clave, user.clave))
       throw new UnauthorizedException('Crendentials are not valid (password)');
 
+    if (!user.activo)
+      throw new UnauthorizedException('Cuenta no activada. Revisa tu correo electrónico.');
+
     return {
-      ...user,
+      id: user.id,
+      email: user.email,
       token: this.getJwtToken({ id: user.id }),
     };
   }
@@ -162,6 +197,21 @@ export class UsersService {
     throw new InternalServerErrorException(
       'Unexpected error, check server logs',
     );
+  }
+
+  // Crear usuario ya activo (sin email) — usado por el seed
+  async createActive(createUserDto: CreateUserDto) {
+    try {
+      const newUser = this.userRepository.create({
+        ...createUserDto,
+        activo: true,
+        activationToken: null,
+      });
+      await this.userRepository.save(newUser);
+      return newUser;
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
   }
 
   //Para llamar cuando se implementa el seed

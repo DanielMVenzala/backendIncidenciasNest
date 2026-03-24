@@ -25,7 +25,7 @@ export class SeedService {
 
     const userPromises: Promise<any>[] = [];
     for (const user of seedUsers) {
-      userPromises.push(this.userService.create(user));
+      userPromises.push(this.userService.createActive(user));
     }
     await Promise.all(userPromises);
 

@@ -57,9 +57,12 @@ export class User {
   rol: UserRole;
 
   @Column('bool', {
-    default: true,
+    default: false,
   })
   activo: boolean;
+
+  @Column('text', { nullable: true })
+  activationToken: string | null;
 
   @OneToMany(() => Incident, (incident) => incident.usuario, {
     cascade: false,
