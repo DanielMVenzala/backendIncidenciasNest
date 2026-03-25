@@ -108,7 +108,7 @@ export class User {
   async hashPasswordBeforeUpdate() {
     //Si empeza por $2b$ es que ya está hasheado, por lo que no hay que hacerlo de nuevo
     if (this.clave && !this.clave.startsWith('$2b$')) {
-      await bcrypt.hash(this.clave, +process.env.BCRYPT_SALT_ROUNDS!);
+      this.clave = await bcrypt.hash(this.clave, +process.env.BCRYPT_SALT_ROUNDS!);
     }
   }
 }
