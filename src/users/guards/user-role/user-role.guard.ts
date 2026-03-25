@@ -15,14 +15,16 @@ export class UserRoleGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    const validRoles: string = this.reflector.get('rol', context.getHandler());
+    const validRoles = this.reflector.get<string | string[]>('rol', context.getHandler());
 
     const req = context.switchToHttp().getRequest();
     const user = req.user as User;
 
     if (!user) throw new BadRequestException('Usuario no encontrado');
 
-    if (validRoles === user.rol) {
+    // Soportar tanto string ('admin') como array (['admin'])
+    const roles = Array.isArray(validRoles) ? validRoles : [validRoles];
+    if (roles.includes(user.rol)) {
       return true;
     }
 
