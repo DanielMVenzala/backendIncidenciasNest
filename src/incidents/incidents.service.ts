@@ -61,13 +61,13 @@ export class IncidentsService {
       const newIncident = this.incidentRepository.create({
         ...incidentDetails,
         prioridad: prioridad ?? IncidentPriority.MEDIA,
-        latitud: coords?.latitud ?? null,
-        longitud: coords?.longitud ?? null,
+        latitud: coords?.latitud,
+        longitud: coords?.longitud,
         imagenes: imagenes.map((imagen) =>
           this.incidentImageRepository.create({ url: imagen }),
         ),
         usuario: user,
-      });
+      } as Partial<Incident>);
       await this.incidentRepository.save(newIncident);
       return { ...newIncident, imagenes: imagenes, usuario: user.id };
     } catch (error) {
