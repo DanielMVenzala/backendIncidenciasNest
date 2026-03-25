@@ -80,6 +80,14 @@ export class Incident {
   })
   prioridad: IncidentPriority;
 
+  @ApiProperty({ example: 37.7241, description: 'Latitud de la incidencia' })
+  @Column('float', { nullable: true })
+  latitud: number;
+
+  @ApiProperty({ example: -3.9717, description: 'Longitud de la incidencia' })
+  @Column('float', { nullable: true })
+  longitud: number;
+
   @ApiProperty()
   @CreateDateColumn({
     type: 'timestamp with time zone',

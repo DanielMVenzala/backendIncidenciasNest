@@ -17,6 +17,7 @@ import { IncidentImage } from './entities/incident-image.entity';
 import { IncidentComment } from './entities/incident-comment.entity';
 import { User } from 'src/users/entities/user.entity';
 import { CloudinaryService } from 'src/common/services/cloudinary-service';
+import { GeocodingService } from 'src/common/services/geocoding.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Injectable()
@@ -40,6 +41,7 @@ export class IncidentsService {
 
     private readonly dataSource: DataSource,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly geocodingService: GeocodingService,
   ) {}
 
   async create(createIncidentDto: CreateIncidentDto) {
@@ -52,10 +54,15 @@ export class IncidentsService {
       if (!user) {
         throw new NotFoundException(`Usuario con email ${usuario} no encontrado`);
       }
+      // Geocodificar la dirección
+      const coords = await this.geocodingService.geocode(incidentDetails.direccion);
+
       //Se devuelven todas las propiedades y de las imágenes solo se devuelve la url
       const newIncident = this.incidentRepository.create({
         ...incidentDetails,
         prioridad: prioridad ?? IncidentPriority.MEDIA,
+        latitud: coords?.latitud ?? null,
+        longitud: coords?.longitud ?? null,
         imagenes: imagenes.map((imagen) =>
           this.incidentImageRepository.create({ url: imagen }),
         ),
