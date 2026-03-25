@@ -135,6 +135,8 @@ export class UsersService {
       nombre: user.nombre,
       email: user.email,
       rol: user.rol,
+      activo: user.activo,
+      bloqueado: user.bloqueado,
       creadoEn: user.creadoEn,
       actualizadoEn: user.actualizadoEn,
       incidentes: (user.incidentes || []).map((inc) => inc.id),
@@ -159,6 +161,17 @@ export class UsersService {
     }
   }
 
+  async toggleBlock(id: string) {
+    const user = await this.findOneUserEntity(id);
+    user.bloqueado = !user.bloqueado;
+    await this.userRepository.save(user);
+    return {
+      id: user.id,
+      bloqueado: user.bloqueado,
+      mensaje: user.bloqueado ? 'Usuario bloqueado' : 'Usuario desbloqueado',
+    };
+  }
+
   async remove(id: string) {
     const user = await this.findOneUserEntity(id);
     await this.userRepository.remove(user);
@@ -169,7 +182,7 @@ export class UsersService {
 
     const user = await this.userRepository.findOne({
       where: { email },
-      select: { email: true, clave: true, id: true, activo: true },
+      select: { email: true, clave: true, id: true, activo: true, bloqueado: true },
     });
 
     if (!user)
@@ -177,6 +190,9 @@ export class UsersService {
 
     if (!bcrypt.compareSync(clave, user.clave))
       throw new UnauthorizedException('Credenciales no válidas');
+
+    if (user.bloqueado)
+      throw new UnauthorizedException('El administrador ha bloqueado su cuenta. Por favor, contacte con el área responsable.');
 
     if (!user.activo)
       throw new UnauthorizedException('Cuenta no activada. Revisa tu correo electrónico.');
@@ -210,6 +226,7 @@ export class UsersService {
       const newUser = this.userRepository.create({
         ...createUserDto,
         activo: true,
+        bloqueado: false,
         activationToken: null,
       });
       await this.userRepository.save(newUser);

@@ -81,6 +81,14 @@ export class UsersController {
     `);
   }
 
+  @Patch(':id/toggle-block')
+  @ApiResponse({ status: 200, description: 'User blocked/unblocked' })
+  @RoleProtected(ValidRoles.admin)
+  @UseGuards(AuthGuard(), UserRoleGuard)
+  toggleBlock(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usersService.toggleBlock(id);
+  }
+
   @Delete(':id')
   @SetMetadata('rol', 'admin')
   @RoleProtected(ValidRoles.admin)

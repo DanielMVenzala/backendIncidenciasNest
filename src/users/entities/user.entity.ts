@@ -61,6 +61,11 @@ export class User {
   })
   activo: boolean;
 
+  @Column('bool', {
+    default: false,
+  })
+  bloqueado: boolean;
+
   @Column('text', { nullable: true })
   activationToken: string | null;
 
