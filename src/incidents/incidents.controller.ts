@@ -26,6 +26,7 @@ import express from 'express';
 import type { Response } from 'express';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Incident } from './entities/incident.entity';
+import { GeocodingService } from 'src/common/services/geocoding.service';
 
 @ApiTags('Incidents')
 @Controller('incidents')
@@ -33,7 +34,17 @@ export class IncidentsController {
   constructor(
     private readonly incidentsService: IncidentsService,
     private readonly reportsService: ReportsService,
+    private readonly geocodingService: GeocodingService,
   ) {}
+
+  // Autocompletado de direcciones — enrutado por el backend
+  // para no exponer la API Key de Google Maps en el frontend
+  @Get('places/autocomplete')
+  @ApiResponse({ status: 200, description: 'Address suggestions' })
+  autocomplete(@Query('input') input: string) {
+    if (!input || input.length < 3) return [];
+    return this.geocodingService.autocomplete(input);
+  }
 
   @Post()
   @ApiResponse({

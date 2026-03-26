@@ -36,4 +36,24 @@ export class GeocodingService {
       longitud: location.lng,
     };
   }
+
+  /**
+   * Autocompletado de direcciones usando Google Places Autocomplete.
+   * Se ejecuta desde el backend para no exponer la API Key en el frontend.
+   */
+  async autocomplete(input: string): Promise<{ description: string; placeId: string }[]> {
+    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input + ', Martos')}&key=${this.apiKey}&components=country:es&location=37.7210,-3.9720&radius=5000&language=es&types=address`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status !== 'OK' || !data.predictions?.length) {
+      return [];
+    }
+
+    return data.predictions.map((p: any) => ({
+      description: p.description,
+      placeId: p.place_id,
+    }));
+  }
 }
