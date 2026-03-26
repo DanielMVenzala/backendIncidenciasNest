@@ -15,8 +15,9 @@ import { UserRoleGuard } from 'src/users/guards/user-role/user-role.guard';
 export class SeedController {
   constructor(private readonly seedService: SeedService) {}
 
-  // TODO: Volver a proteger con guards tras ejecutar el seed
   @Get()
+  @RoleProtected(ValidRoles.admin)
+  @UseGuards(AuthGuard(), UserRoleGuard)
   executeSeed() {
     return this.seedService.runSeed();
   }
