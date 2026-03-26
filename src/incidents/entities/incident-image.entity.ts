@@ -1,7 +1,8 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Incident } from './incident.entity';
 
-//DTO para la creación de imágenes
+// Entidad que almacena las URLs de las imágenes subidas a Cloudinary.
+// Cada incidencia puede tener múltiples imágenes (relación OneToMany).
 @Entity({ name: 'incident_images' })
 export class IncidentImage {
   @PrimaryGeneratedColumn()

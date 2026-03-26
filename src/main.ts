@@ -1,3 +1,8 @@
+/**
+ * Punto de entrada de la aplicación NestJS.
+ * Arranca el servidor, configura validación global, prefijo de API
+ * y documentación Swagger.
+ */
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
@@ -6,8 +11,13 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Todas las rutas empezarán por /api/v1
   app.setGlobalPrefix('api/v1');
 
+  // Validación global de DTOs:
+  // - whitelist: elimina propiedades no declaradas en el DTO
+  // - forbidNonWhitelisted: lanza error si llegan propiedades desconocidas
+  // - transform: convierte payloads al tipo del DTO (necesario para @Transform)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -16,7 +26,7 @@ async function bootstrap() {
     }),
   );
 
-  //Configuración para crear la documentación de endpoints
+  // Configuración de Swagger para documentación interactiva en /api
   const config = new DocumentBuilder()
     .setTitle('INCIDENTS RESTFUL API')
     .setDescription('Martos incidents endpoints')
@@ -24,8 +34,9 @@ async function bootstrap() {
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
-  const port = process.env.PORT || 3000;
 
+  // Puerto configurable por variable de entorno (Render lo define automáticamente)
+  const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
 }
 bootstrap();

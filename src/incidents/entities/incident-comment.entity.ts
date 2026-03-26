@@ -9,6 +9,11 @@ import { Incident } from './incident.entity';
 import { User } from 'src/users/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * Entidad para los comentarios/notas de una incidencia.
+ * Los administradores pueden dejar notas (ej: "Se ha enviado un operario")
+ * que el usuario ve como un timeline en el detalle de la incidencia.
+ */
 @Entity({ name: 'incident_comments' })
 export class IncidentComment {
   @ApiProperty()

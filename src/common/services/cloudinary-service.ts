@@ -6,9 +6,14 @@ import {
 } from 'cloudinary';
 import toStream = require('buffer-to-stream');
 
-//Métodos para subir y borrar una imagen en Cloudinary
+/**
+ * Servicio para gestionar imágenes en Cloudinary (subida y eliminación).
+ * Las imágenes de incidencias se almacenan en la carpeta 'martos_incidents'.
+ * Se usa un stream para no cargar todo el archivo en memoria.
+ */
 @Injectable()
 export class CloudinaryService {
+  // Sube una imagen a Cloudinary y devuelve la URL segura (HTTPS)
   async uploadImage(
     file: Express.Multer.File,
   ): Promise<UploadApiResponse | UploadApiErrorResponse> {

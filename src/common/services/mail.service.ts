@@ -1,3 +1,8 @@
+/**
+ * Servicio de envío de emails mediante Resend (API HTTP).
+ * Se usa Resend en lugar de SMTP (nodemailer) porque Render bloquea
+ * conexiones SMTP salientes, provocando timeout.
+ */
 import { Injectable } from '@nestjs/common';
 import { Resend } from 'resend';
 
@@ -6,10 +11,16 @@ export class MailService {
   private resend: Resend;
 
   constructor() {
+    // La API key de Resend se configura como variable de entorno en Render
     this.resend = new Resend(process.env.RESEND_API_KEY);
   }
 
+  /**
+   * Envía un email de activación con un enlace que contiene el token UUID.
+   * Al pulsar el enlace, se activa la cuenta del usuario en GET /users/activate/:token.
+   */
   async sendActivationEmail(to: string, nombre: string, token: string) {
+    // Construir URL de activación (HOST_API apunta a la URL de Render en producción)
     const activationUrl = `${process.env.HOST_API || 'http://localhost:3000/api/v1'}/users/activate/${token}`;
 
     await this.resend.emails.send({

@@ -16,6 +16,11 @@ import { fileFilter } from './helpers/fileFilter';
 import { CloudinaryService } from 'src/common/services/cloudinary-service';
 import { ApiTags } from '@nestjs/swagger';
 
+/**
+ * Controlador para la subida de archivos.
+ * Recibe imágenes via multipart/form-data, las valida con fileFilter
+ * y las sube a Cloudinary. Devuelve la URL segura de la imagen.
+ */
 @ApiTags('Images')
 @Controller('files')
 export class FilesController {

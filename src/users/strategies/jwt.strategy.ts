@@ -7,7 +7,12 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 
-//Estrategia para generar el token
+/**
+ * Estrategia JWT para Passport.
+ * Se ejecuta automáticamente en cada petición protegida con @UseGuards(AuthGuard()).
+ * Extrae el token del header Authorization: Bearer <token>, lo decodifica
+ * con la clave secreta y busca al usuario en la base de datos.
+ */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -17,10 +22,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       secretOrKey: configService.get('JWT_SECRET')!,
+      // Extraer el JWT del header Authorization: Bearer <token>
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     });
   }
 
+  /**
+   * Se ejecuta tras decodificar el JWT. Verifica que el usuario existe
+   * y está activo. Si es válido, inyecta el usuario en req.user.
+   */
   async validate(payload: JwtPayload): Promise<User> {
     const { id } = payload;
 
@@ -33,6 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         'Usuario inactivo, contacta con un administrador',
       );
 
+    // El usuario queda disponible en req.user para los guards y controladores
     return user;
   }
 }

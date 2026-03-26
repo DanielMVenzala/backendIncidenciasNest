@@ -98,6 +98,8 @@ export class UsersController {
   }
 
   @Get()
+  @RoleProtected(ValidRoles.admin)
+  @UseGuards(AuthGuard(), UserRoleGuard)
   findAll(@Query() findUsersQueryDto: FindUsersQueryDto) {
     return this.usersService.findAll(findUsersQueryDto);
   }

@@ -17,112 +17,117 @@ interface SeedData {
   users: SeedUser[];
 }
 
+// Contraseña genérica para todos los usuarios del seed.
+// Se define como variable de entorno (SEED_PASSWORD) para no exponer
+// credenciales reales en el código fuente público.
+const SEED_PASSWORD = process.env.SEED_PASSWORD || 'Seed_Default_1234';
+
 export const initialData: SeedData = {
   users: [
     {
       nombre: 'Alejandro García Martínez',
       email: 'a.garcia@email.com',
-      clave: 'Garc1a_2024!',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Daniel MV',
       email: 'admin@admin.com',
-      clave: 'Admin_1234',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Valentina Rodríguez Silva',
       email: 'v.rodriguez@servidor.es',
-      clave: 'Valen_Rod92',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Mateo Hernández López',
       email: 'm.hernandez@webmail.com',
-      clave: 'MateoH_#88',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Isabella Torres Castro',
       email: 'isabella.torres@corporativo.com',
-      clave: 'T0rres_I@2023',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Sebastián Ramírez Peña',
       email: 's.ramirez@fastmail.net',
-      clave: 'Ramz_Sebas_55',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Lucía Méndez Morales',
       email: 'lucia.mendez@u-portal.com',
-      clave: 'LM_Morales!8',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Julián Ortega Vargas',
       email: 'j.ortega@digital.org',
-      clave: 'Jortega_90_v',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Mariana Flores Solís',
       email: 'm.flores@servicios.mx',
-      clave: 'Flor3s_Mariana',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Nicolás Ruiz Salazar',
       email: 'n.ruiz@tecnologia.io',
-      clave: 'NRuiz_9172',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Camila Soto Herrera',
       email: 'c.soto@dominio.com',
-      clave: 'Soto_C_2024',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Diego Navarro Jiménez',
       email: 'd.navarro@consultora.com',
-      clave: 'DiegoNav_88*',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Sofía Paredes Rivas',
       email: 's.paredes@red.com',
-      clave: 'Paredes_Sof_!',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Joaquín Valdez Espinoza',
       email: 'j.valdez@empresa.cl',
-      clave: 'ValdezJ_3312',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Elena Castillo Duarte',
       email: 'e.castillo@mail.com',
-      clave: 'Elena_CD_#00',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Andrés Ibarra Santos',
       email: 'a.ibarra@proyectos.net',
-      clave: 'Ibarra_A_2024',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Daniela Acosta Benítez',
       email: 'd.acosta@asistente.com',
-      clave: 'Dacosta_Ben22',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Felipe Guerrero Campos',
       email: 'f.guerrero@estudio.com',
-      clave: 'Gue_Fel_2021',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Martina Suárez Pardo',
       email: 'm.suarez@web.es',
-      clave: 'Marti_Sua_77',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Gabriel Montero Ríos',
       email: 'g.montero@nube.com',
-      clave: 'Montero_G_#24',
+      clave: SEED_PASSWORD,
     },
     {
       nombre: 'Victoria Rojas Beltrán',
       email: 'v.rojas@global.com',
-      clave: 'Vic_Rojas_91',
+      clave: SEED_PASSWORD,
     },
   ],
 

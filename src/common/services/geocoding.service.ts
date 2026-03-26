@@ -1,3 +1,8 @@
+/**
+ * Servicio de geocodificación mediante Google Maps Geocoding API.
+ * Convierte direcciones de texto en coordenadas (latitud/longitud)
+ * restringiendo la búsqueda a Martos, Jaén, España.
+ */
 import { Injectable } from '@nestjs/common';
 
 interface GeocodingResult {
@@ -7,6 +12,7 @@ interface GeocodingResult {
 
 @Injectable()
 export class GeocodingService {
+  // La API key se configura como variable de entorno GOOGLE_MAPS_API_KEY
   private readonly apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
   /**
