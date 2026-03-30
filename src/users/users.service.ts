@@ -186,10 +186,10 @@ export class UsersService {
     });
 
     if (!user)
-      throw new UnauthorizedException('Credenciales no válidas');
+      throw new UnauthorizedException('Este usuario no existe, regístrate para comenzar');
 
     if (!bcrypt.compareSync(clave, user.clave))
-      throw new UnauthorizedException('Credenciales no válidas');
+      throw new UnauthorizedException('La contraseña no es correcta');
 
     if (user.bloqueado)
       throw new UnauthorizedException('El administrador ha bloqueado su cuenta. Por favor, contacte con el área responsable.');
