@@ -54,15 +54,21 @@ export class IncidentsService {
       if (!user) {
         throw new NotFoundException(`Usuario con email ${usuario} no encontrado`);
       }
-      // Geocodificar la dirección
+      // Geocodificar la dirección y verificar que pertenece a Martos
       const coords = await this.geocodingService.geocode(incidentDetails.direccion);
+
+      if (!coords) {
+        throw new BadRequestException(
+          'La dirección no es válida o no pertenece a Martos. Introduce una dirección dentro del municipio.',
+        );
+      }
 
       //Se devuelven todas las propiedades y de las imágenes solo se devuelve la url
       const newIncident = this.incidentRepository.create({
         ...incidentDetails,
         prioridad: prioridad ?? IncidentPriority.MEDIA,
-        latitud: coords?.latitud,
-        longitud: coords?.longitud,
+        latitud: coords.latitud,
+        longitud: coords.longitud,
         imagenes: imagenes.map((imagen) =>
           this.incidentImageRepository.create({ url: imagen }),
         ),
@@ -71,7 +77,7 @@ export class IncidentsService {
       await this.incidentRepository.save(newIncident);
       return { ...newIncident, imagenes: imagenes, usuario: user.id };
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       this.handleDBExceptions(error);
     }
   }
