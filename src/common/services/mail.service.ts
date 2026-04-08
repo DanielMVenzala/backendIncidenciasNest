@@ -24,13 +24,13 @@ export class MailService {
     const activationUrl = `${process.env.HOST_API || 'http://localhost:3000/api/v1'}/users/activate/${token}`;
 
     await this.resend.emails.send({
-      from: 'Incidencias Martos <onboarding@resend.dev>',
+      from: 'Martos Arregla <onboarding@resend.dev>',
       to,
-      subject: 'Activa tu cuenta — Incidencias Martos',
+      subject: 'Activa tu cuenta — Martos Arregla',
       html: `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #FAF7F2; border-radius: 16px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #2C5F7C, #4A8BAD); padding: 32px 24px; text-align: center;">
-            <h1 style="color: #fff; margin: 0; font-size: 22px;">Incidencias Martos</h1>
+            <h1 style="color: #fff; margin: 0; font-size: 22px;">Martos Arregla</h1>
           </div>
           <div style="padding: 32px 24px;">
             <p style="font-size: 16px; color: #1A1A1A;">Hola <strong>${nombre}</strong>,</p>
