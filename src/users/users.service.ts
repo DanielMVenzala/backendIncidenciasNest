@@ -80,6 +80,55 @@ export class UsersService {
     return { mensaje: 'Cuenta activada correctamente. Ya puedes iniciar sesión.' };
   }
 
+  /**
+   * Genera un token de reset y envía un email al usuario.
+   * Por seguridad, devuelve el mismo mensaje aunque el email no exista.
+   */
+  async forgotPassword(email: string) {
+    const user = await this.userRepository.findOneBy({ email: email.toLowerCase().trim() });
+
+    // No revelar si el email existe o no (seguridad)
+    if (!user) {
+      return { mensaje: 'Si el email existe, recibirás un enlace para restablecer tu contraseña.' };
+    }
+
+    const resetToken = uuid();
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+    await this.userRepository.save(user);
+
+    // Envío en segundo plano (no bloquea la respuesta)
+    this.mailService
+      .sendResetPasswordEmail(user.email, user.nombre, resetToken)
+      .catch((err) => console.error('[MAIL] Error al enviar email de reset:', err.message));
+
+    return { mensaje: 'Si el email existe, recibirás un enlace para restablecer tu contraseña.' };
+  }
+
+  /**
+   * Valida el token y actualiza la contraseña del usuario.
+   * Lanza error si el token no existe o ha expirado.
+   */
+  async resetPassword(token: string, nuevaClave: string) {
+    const user = await this.userRepository.findOneBy({ resetToken: token });
+
+    if (!user) {
+      throw new BadRequestException('Token de restablecimiento inválido');
+    }
+
+    if (!user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      throw new BadRequestException('El enlace ha caducado. Solicita uno nuevo.');
+    }
+
+    // Hashear nueva contraseña manualmente (el hook BeforeUpdate también lo hace)
+    user.clave = await bcrypt.hash(nuevaClave, +process.env.BCRYPT_SALT_ROUNDS!);
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    await this.userRepository.save(user);
+
+    return { mensaje: 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.' };
+  }
+
   async findAll(query: FindUsersQueryDto) {
     const users = await this.findAllEntities(query);
     return users.map((user) => ({

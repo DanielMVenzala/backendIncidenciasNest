@@ -7,9 +7,13 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Habilitar body parser para formularios HTML (reset password)
+  app.use(urlencoded({ extended: true }));
 
   // Todas las rutas empezarán por /api/v1
   app.setGlobalPrefix('api/v1');

@@ -69,6 +69,13 @@ export class User {
   @Column('text', { nullable: true })
   activationToken: string | null;
 
+  // Token para resetear contraseña (válido por 1 hora)
+  @Column('text', { nullable: true })
+  resetToken: string | null;
+
+  @Column('timestamp with time zone', { nullable: true })
+  resetTokenExpiry: Date | null;
+
   @OneToMany(() => Incident, (incident) => incident.usuario, {
     cascade: false,
   })
