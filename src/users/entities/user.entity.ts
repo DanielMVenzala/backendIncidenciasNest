@@ -66,6 +66,10 @@ export class User {
   })
   bloqueado: boolean;
 
+  // URL de la foto de perfil almacenada en Cloudinary
+  @Column('text', { nullable: true })
+  fotoPerfil: string | null;
+
   @Column('text', { nullable: true })
   activationToken: string | null;
 

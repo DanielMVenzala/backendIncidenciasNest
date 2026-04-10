@@ -186,6 +186,7 @@ export class UsersService {
       rol: user.rol,
       activo: user.activo,
       bloqueado: user.bloqueado,
+      fotoPerfil: user.fotoPerfil,
       creadoEn: user.creadoEn,
       actualizadoEn: user.actualizadoEn,
       incidentes: (user.incidentes || []).map((inc) => inc.id),
