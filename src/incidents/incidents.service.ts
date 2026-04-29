@@ -184,6 +184,8 @@ export class IncidentsService {
       search,
       estado,
       prioridad,
+      desde,
+      hasta,
       orderBy = 'creadoEn',
       order = 'DESC',
       limit = 100,
@@ -233,6 +235,19 @@ export class IncidentsService {
 
     if (prioridad) {
       queryBuilder.andWhere(`incident.prioridad =:prioridad`, { prioridad });
+    }
+
+    // Filtros por rango de fechas (informes)
+    if (desde) {
+      queryBuilder.andWhere('incident.creadoEn >= :desde', { desde });
+    }
+    if (hasta) {
+      // Sumamos 1 día al "hasta" para incluir todo el día seleccionado
+      const hastaDate = new Date(hasta);
+      hastaDate.setDate(hastaDate.getDate() + 1);
+      queryBuilder.andWhere('incident.creadoEn < :hasta', {
+        hasta: hastaDate.toISOString(),
+      });
     }
 
     //Sería como decir incident.creadoEn-actualizadoEn, ASC-DESC

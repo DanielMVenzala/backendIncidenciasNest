@@ -146,6 +146,87 @@ En el backend, cuando un endpoint esta protegido con `@UseGuards(AuthGuard())`:
    - Si es valido → inyecta el usuario en `req.user`
 3. El controlador y los guards posteriores pueden acceder a `req.user`
 
+### 2.6 Recuperacion de contrasena (forgot password)
+
+El flujo de "olvide mi contrasena" sigue el mismo patron que la activacion por email pero con un giro: en vez de redirigir a la app, el usuario rellena un **formulario HTML servido por el propio backend**. Asi se evita la complejidad de configurar deep links en Android.
+
+**Paso 1 — Solicitud desde la app:**
+
+1. El usuario pulsa "¿Olvidaste tu contrasena?" en la pantalla de login
+2. Se abre `ForgotPasswordPage` (ruta `/forgot-password`, marcada como auth route en el guard global)
+3. El usuario introduce su email y pulsa "Enviar enlace"
+4. `AuthProvider.forgotPassword()` llama a `AuthService.forgotPassword(email)`
+5. Se hace `POST /api/v1/users/forgot-password` con `{email}`
+
+**Paso 2 — Backend genera token y envia email:**
+
+1. `UsersController.forgotPassword()` valida el `ForgotPasswordDto` (`@IsEmail`)
+2. Llama a `UsersService.forgotPassword(email)`:
+   - Busca al usuario por email (en minusculas, trim)
+   - **Importante**: si el email NO existe, devuelve igualmente el mensaje de exito generico. Esto evita revelar a un atacante si un email esta o no registrado en el sistema (defensa contra enumeracion de usuarios)
+   - Si existe, genera un `resetToken` con `uuid()`
+   - Guarda en el usuario:
+     - `resetToken` = el UUID generado
+     - `resetTokenExpiry` = `new Date(Date.now() + 60 * 60 * 1000)` (1 hora desde ahora)
+   - Envia email **en segundo plano** (no bloquea la respuesta) llamando a `MailService.sendResetPasswordEmail()`
+3. Devuelve siempre `{mensaje: "Si el email existe, recibiras un enlace para restablecer tu contrasena."}`
+
+**Paso 3 — Frontend muestra confirmacion:**
+
+1. `ForgotPasswordPage` cambia el estado a `_emailSent = true`
+2. Se muestra una pantalla con icono de email y mensaje "Revisa tu correo"
+
+**Paso 4 — El usuario pulsa el enlace del email:**
+
+El email contiene un boton con el enlace `{HOST_API}/users/reset-password/{token}`. Al pulsarlo, el navegador del movil hace una peticion `GET` a ese endpoint del backend.
+
+**Paso 5 — Backend devuelve un formulario HTML:**
+
+1. `UsersController.showResetForm()` recibe el token como parametro de URL
+2. Devuelve una pagina HTML con:
+   - Cabecera "Restablecer contrasena"
+   - Dos inputs: nueva contrasena y confirmar contrasena (ambos `type="password"`, `required`, `minlength="8"`)
+   - Boton de submit que hace `POST` al mismo endpoint con el token en la URL
+   - Estilos inline (sin CSS externo) imitando el diseno de la app
+
+Importante: en este momento NO se valida si el token es valido. Eso se hace al procesar el POST. El motivo es que mostrar el formulario aunque el token ya este caducado da mejor UX que un mensaje de error directo.
+
+**Paso 6 — Usuario rellena el formulario y pulsa "Cambiar contrasena":**
+
+1. El navegador hace `POST /api/v1/users/reset-password/{token}` con `Content-Type: application/x-www-form-urlencoded` y los campos `clave` y `confirmar`
+2. Para que NestJS pueda parsear este formato (en lugar del JSON habitual), se anadio en `main.ts`:
+   ```typescript
+   app.use(urlencoded({ extended: true }));
+   ```
+3. `UsersController.processReset()`:
+   - Valida que `clave.length >= 8`
+   - Valida que `clave === confirmar`
+   - Si alguna validacion falla → devuelve HTML de error (en rojo)
+4. Llama a `UsersService.resetPassword(token, nuevaClave)`:
+   - Busca al usuario con `resetToken === token`
+   - Si no existe → `BadRequestException("Token de restablecimiento invalido")`
+   - Si `resetTokenExpiry < new Date()` → `BadRequestException("El enlace ha caducado")`
+   - Hashea la nueva contrasena con `bcrypt.hash(nuevaClave, BCRYPT_SALT_ROUNDS)`
+   - Guarda la nueva contrasena
+   - Pone `resetToken = null` y `resetTokenExpiry = null` (el token se quema, no se puede reutilizar)
+5. Devuelve HTML de exito (verde) con mensaje "Ya puedes iniciar sesion en la app"
+
+**Paso 7 — Usuario vuelve a la app y entra:**
+
+El usuario cierra el navegador, abre la app y hace login con su nueva contrasena.
+
+### 2.7 Diferencias clave entre activacion y reset
+
+| Aspecto | Activacion de cuenta | Reset de contrasena |
+|---------|---------------------|---------------------|
+| Cuando se genera | Al registrarse | Cuando el usuario pulsa "olvide mi contrasena" |
+| Caducidad | No tiene (vale hasta que se use) | 1 hora |
+| Campo en BD | `activationToken` | `resetToken` + `resetTokenExpiry` |
+| UX al pulsar el enlace | Pagina HTML de confirmacion | Pagina HTML con formulario |
+| Que actualiza | `activo: true` | Hash de la contrasena |
+| Se borra tras usar | Si | Si |
+| Funciona si email no real | No (no recibe el email) | No (no recibe el email) |
+
 ---
 
 ## 3. SISTEMA DE ROLES Y PERMISOS
@@ -189,6 +270,9 @@ const roles = Array.isArray(validRoles) ? validRoles : [validRoles];
 | /users/register | POST | Ninguna (publico) |
 | /users/login | POST | Ninguna (publico) |
 | /users/activate/:token | GET | Ninguna (publico) |
+| /users/forgot-password | POST | Ninguna (publico) |
+| /users/reset-password/:token | GET | Ninguna (publico, devuelve formulario HTML) |
+| /users/reset-password/:token | POST | Ninguna (publico, procesa formulario) |
 | /users | GET | Admin (AuthGuard + RoleGuard) |
 | /users/:id | GET | Ninguna (deberia tener auth) |
 | /users/:id | PATCH | Ninguna (deberia verificar propiedad) |
@@ -562,17 +646,97 @@ Esto actua como un **guard global**: es imposible acceder a ninguna pantalla sin
 | /incidents-map | IncidentsMapPage | Autenticado (admin) |
 | /statistics | StatisticsPage | Autenticado (admin) |
 | /phones | PhonesPage | Autenticado |
+| /forgot-password | ForgotPasswordPage | Publico (incluida en isAuthRoute) |
 
 ---
 
 ## 13. ESTADISTICAS (ADMIN)
 
-La pagina de estadisticas (`statistics_page.dart`) no tiene endpoint propio en el backend. Carga todas las incidencias con `IncidentProvider.loadAllIncidents()` y calcula las estadisticas en el frontend:
+La pagina de estadisticas (`statistics_page.dart`) calcula los graficos en el frontend a partir de las incidencias cargadas por `IncidentProvider.loadAllIncidents()`. Ademas, ofrece la **descarga de informes Excel** que se genera en el backend.
+
+### 13.1 Graficos visualizados
 
 1. **Tarjetas resumen**: cuenta total, pendientes, en progreso y resueltas
 2. **Grafico donut** (por estado): usa `PieChart` de `fl_chart`, colores alineados con los marcadores del mapa
 3. **Grafico de barras** (por prioridad): baja, media, alta, critica con colores diferenciados
 4. **Grafico de barras** (por mes): muestra los ultimos 6 meses, cuenta incidencias por `createdAt.month`
+
+### 13.2 Descarga de informes Excel
+
+El admin puede descargar un informe Excel con el desglose completo de incidencias desde la propia pantalla de estadisticas.
+
+**Flujo completo:**
+
+1. El admin pulsa el icono de descarga (`Icons.file_download_outlined`) en el AppBar
+2. Se abre un dialogo con dos `DatePicker` opcionales (desde / hasta) para filtrar por rango de fechas
+3. El admin puede dejar los filtros vacios (descarga todas las incidencias) o seleccionar fechas
+4. Al pulsar "Descargar":
+   - `IncidentService.downloadIncidentsReport({filters})` hace `GET /api/v1/incidents/report/excel?desde=...&hasta=...`
+   - **Importante**: la peticion usa `responseType: ResponseType.bytes` para que Dio reciba el binario en vez de intentar parsearlo como JSON
+   - El backend genera el Excel en memoria con `exceljs` y lo devuelve como buffer
+   - El frontend llama a `getTemporaryDirectory()` (de `path_provider`) para obtener un directorio temporal del dispositivo
+   - Guarda el buffer en `informe_incidencias_{timestamp}.xlsx`
+   - Llama a `OpenFilex.open(filePath)` para abrir el archivo con la app por defecto del dispositivo (Excel, Google Sheets, WPS, etc.)
+5. Mientras tanto, el boton del AppBar muestra un `CircularProgressIndicator` y queda deshabilitado
+6. Al terminar, muestra un `SnackBar` de confirmacion o error
+
+**Backend — generacion del Excel:**
+
+`ReportsService.generateIncidentsExcel(incidents)` crea un workbook con dos hojas:
+
+**Hoja 1 — Resumen ejecutivo:**
+- Fecha y hora de generacion del informe
+- Total de incidencias
+- Desglose por estado (pendientes, en progreso, resueltas, rechazadas)
+- Desglose por prioridad (criticas, altas, medias, bajas)
+- **Tiempo medio de resolucion** (en dias): se calcula como la media de `(actualizadoEn - creadoEn)` de las incidencias resueltas
+- **Porcentaje resuelto**: `(resueltas / total) * 100`
+- **Top 5 usuarios** con mas incidencias creadas
+- Estilos: cabecera azul con texto blanco en negrita, secciones marcadas con `── TITULO ──`
+
+**Hoja 2 — Listado completo:**
+- 14 columnas: ID, Titulo, Descripcion, Direccion, Estado, Prioridad, Usuario, Email, Nº imagenes, Nº comentarios, Latitud, Longitud, Creada, Actualizada
+- Una fila por incidencia
+- Cabecera con color azul y texto blanco en negrita
+- **Filtros automaticos** habilitados con `worksheet.autoFilter` (el usuario puede filtrar por cualquier columna desde Excel)
+- **Primera fila congelada** con `worksheet.views = [{state: 'frozen', ySplit: 1}]` (al hacer scroll, la cabecera se queda fija)
+
+**Backend — filtros por fecha:**
+
+El endpoint `GET /incidents/report/excel` reutiliza el `findAllEntities()` con el `FindIncidentsQueryDto`, al que se anadieron dos campos:
+```typescript
+@IsOptional()
+@IsDateString()
+desde?: string;
+
+@IsOptional()
+@IsDateString()
+hasta?: string;
+```
+
+En el query builder de `IncidentsService.findAllEntities()`:
+```typescript
+if (desde) {
+  queryBuilder.andWhere('incident.creadoEn >= :desde', { desde });
+}
+if (hasta) {
+  // Sumamos 1 dia al "hasta" para incluir todo el dia seleccionado
+  const hastaDate = new Date(hasta);
+  hastaDate.setDate(hastaDate.getDate() + 1);
+  queryBuilder.andWhere('incident.creadoEn < :hasta', {
+    hasta: hastaDate.toISOString(),
+  });
+}
+```
+
+El truco del `+1 dia` en `hasta` es importante: si el usuario selecciona "hasta el 15 de marzo", queremos incluir todas las incidencias del dia 15 (no solo las creadas a las 00:00:00). Por eso comparamos con `< 16 de marzo 00:00:00`.
+
+### 13.3 Paquetes nuevos en el frontend
+
+| Paquete | Para que se usa |
+|---------|-----------------|
+| `path_provider` | Obtener el directorio temporal del dispositivo donde guardar el Excel descargado |
+| `open_filex` | Abrir el archivo con la app por defecto del dispositivo tras descargarlo |
 
 ---
 
@@ -732,7 +896,8 @@ src/
 │   ├── dto/
 │   │   ├── create-user.dto.ts           # Validacion de registro
 │   │   ├── update-user.dto.ts           # Validacion de actualizacion
-│   │   └── login-user.dto.ts            # Validacion de login
+│   │   ├── login-user.dto.ts            # Validacion de login
+│   │   └── forgot-password.dto.ts       # Validacion de email para reset
 │   ├── users.controller.ts              # Endpoints de usuarios
 │   ├── users.service.ts                 # Logica de negocio de usuarios
 │   ├── users.module.ts                  # Modulo de usuarios
@@ -792,8 +957,9 @@ lib/
 │   ├── incident_provider.dart           # Estado incidencias (ChangeNotifier)
 │   └── theme_provider.dart              # Modo claro/oscuro (ChangeNotifier)
 └── presentation/pages/
-    ├── login_page.dart                  # Pantalla de login
+    ├── login_page.dart                  # Pantalla de login (con enlace a forgot)
     ├── register_page.dart               # Pantalla de registro + activacion
+    ├── forgot_password_page.dart        # Solicitar reset de contrasena por email
     ├── dashboard_page.dart              # Menu principal (diferente por rol)
     ├── create_incident_page.dart        # Crear incidencia (fotos, autocompletado)
     ├── incidents_list_page.dart          # Lista con filtros y ordenacion
@@ -801,7 +967,7 @@ lib/
     ├── profile_page.dart                # Editar nombre y contrasena
     ├── admin_users_page.dart            # Gestion usuarios (bloquear/eliminar)
     ├── incidents_map_page.dart          # Mapa Google Maps con marcadores
-    ├── statistics_page.dart             # Graficos con fl_chart
+    ├── statistics_page.dart             # Graficos + descarga de informes Excel
     └── phones_page.dart                 # Telefonos de interes con dial
 ```
 
@@ -825,4 +991,12 @@ lib/
 | **Cascade** | Operacion de BD que propaga acciones en cadena. Si se borra una incidencia, se borran automaticamente sus imagenes y comentarios asociados. |
 | **Eager loading** | Cargar relaciones automaticamente al consultar una entidad. Los comentarios de una incidencia se cargan siempre al consultar la incidencia. |
 | **Multipart/form-data** | Formato de envio HTTP que permite adjuntar archivos binarios (imagenes) junto con datos de texto en la misma peticion. |
+| **application/x-www-form-urlencoded** | Formato de envio HTTP que usan los formularios HTML por defecto. Los campos van en el body como `key1=value1&key2=value2`. NestJS lo soporta gracias a `app.use(urlencoded({ extended: true }))` en `main.ts`. |
 | **API REST** | Arquitectura de comunicacion donde el cliente y el servidor intercambian datos via HTTP usando verbos (GET, POST, PATCH, DELETE) y URLs que representan recursos. |
+| **path_provider** | Paquete Flutter que da acceso a directorios del sistema (cache, temp, documentos). En esta app se usa para guardar el Excel descargado en `getTemporaryDirectory()`. |
+| **open_filex** | Paquete Flutter que abre un archivo local con la app por defecto del sistema. Se usa para abrir el Excel descargado tras solicitar el informe desde la app. |
+| **exceljs** | Libreria de Node.js para generar/leer archivos Excel (.xlsx). Permite crear hojas, columnas, filas, formulas, estilos, filtros automaticos y paneles congelados desde el backend. |
+| **autoFilter (exceljs)** | Propiedad de una hoja de Excel generada con exceljs que activa los desplegables de filtro en la cabecera. El usuario puede filtrar/ordenar el listado directamente en Excel. |
+| **freeze panes** | Tecnica de Excel que mantiene fijas ciertas filas/columnas al hacer scroll. En el informe se congela la primera fila para que la cabecera siempre sea visible. |
+| **Token de un solo uso** | Token (UUID) que solo es valido para una accion concreta y se borra/invalida tras usarse. La activacion de cuenta y el reset de contrasena usan este patron. |
+| **Enumeracion de usuarios** | Vulnerabilidad en la que el sistema revela si un email esta registrado (por ejemplo, devolviendo "usuario no encontrado" en el reset). Se mitiga devolviendo siempre el mismo mensaje generico. |

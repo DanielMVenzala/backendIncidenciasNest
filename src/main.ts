@@ -15,6 +15,9 @@ async function bootstrap() {
   // Habilitar body parser para formularios HTML (reset password)
   app.use(urlencoded({ extended: true }));
 
+  // Habilitar CORS para la web de administración
+  app.enableCors();
+
   // Todas las rutas empezarán por /api/v1
   app.setGlobalPrefix('api/v1');
 

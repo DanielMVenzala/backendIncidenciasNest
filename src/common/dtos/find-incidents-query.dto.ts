@@ -1,4 +1,5 @@
 import {
+  IsDateString,
   IsEnum,
   IsOptional,
   IsPositive,
@@ -59,4 +60,13 @@ export class FindIncidentsQueryDto extends PaginationDto {
   @IsOptional()
   @IsEnum(OrderDirection)
   order?: OrderDirection;
+
+  // Filtros por rango de fechas (formato ISO: 2026-03-01)
+  @IsOptional()
+  @IsDateString()
+  desde?: string;
+
+  @IsOptional()
+  @IsDateString()
+  hasta?: string;
 }
