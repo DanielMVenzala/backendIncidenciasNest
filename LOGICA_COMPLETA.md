@@ -1000,3 +1000,399 @@ lib/
 | **freeze panes** | Tecnica de Excel que mantiene fijas ciertas filas/columnas al hacer scroll. En el informe se congela la primera fila para que la cabecera siempre sea visible. |
 | **Token de un solo uso** | Token (UUID) que solo es valido para una accion concreta y se borra/invalida tras usarse. La activacion de cuenta y el reset de contrasena usan este patron. |
 | **Enumeracion de usuarios** | Vulnerabilidad en la que el sistema revela si un email esta registrado (por ejemplo, devolviendo "usuario no encontrado" en el reset). Se mitiga devolviendo siempre el mismo mensaje generico. |
+| **Next.js** | Framework de React que añade renderizado en el servidor (SSR), routing automático basado en carpetas (App Router) y middleware. Usado en la web de administración. |
+| **Tailwind CSS** | Framework de CSS basado en clases utilitarias (`flex`, `p-4`, `bg-blue-500`). Se compila al build para incluir solo las clases usadas. Permite construir UIs sin escribir CSS personalizado. |
+| **Recharts** | Librería de gráficos para React equivalente a `fl_chart` en Flutter. Se usa en el dashboard de la web. |
+| **Middleware (Next.js)** | Función que se ejecuta antes de cargar cada página. Equivalente a un guard global. En la web protege las rutas privadas comprobando la cookie del JWT. |
+| **Rewrite (Next.js)** | Reescritura de rutas en el servidor de Next.js. Permite redirigir peticiones internas a otros dominios sin que el navegador lo sepa, evitando problemas de CORS. |
+| **CORS** | Política de seguridad del navegador que impide que una página web haga peticiones a un dominio distinto del suyo. Se sortea en la web admin con un rewrite. |
+| **App Router** | Sistema de rutas de Next.js 13+ basado en carpetas dentro de `app/`. Cada `page.tsx` es una ruta. Permite layouts anidados y server components. |
+
+---
+
+## 21. FOTO DE PERFIL DE USUARIO
+
+### 21.1 Funcionamiento
+
+Cualquier usuario autenticado (ciudadano o admin) puede subir una foto de perfil desde la pantalla `ProfilePage` de la app móvil. La foto reemplaza al avatar generado con la inicial del nombre tanto en el dashboard como en el panel de gestión de usuarios del admin.
+
+### 21.2 Flujo paso a paso
+
+1. El usuario pulsa el avatar circular en `ProfilePage` (con un pequeño icono de cámara superpuesto en la esquina inferior derecha)
+2. Se abre un `ModalBottomSheet` con dos opciones: cámara o galería
+3. `ImagePicker.pickImage()` con `maxWidth: 512`, `maxHeight: 512`, `imageQuality: 85`
+4. La imagen seleccionada se sube a Cloudinary reutilizando el endpoint existente `POST /files/incident` (no se creó uno nuevo, simplificación intencional — Cloudinary almacena todo en la misma carpeta `martos_incidents`)
+5. Cloudinary devuelve la URL HTTPS segura
+6. Se hace `PATCH /api/v1/users/{id}` con `{fotoPerfil: url}` para guardar la URL en la BD
+7. `AuthProvider` actualiza el `_user` y notifica a los listeners
+8. La UI se reconstruye automáticamente con la nueva foto
+
+### 21.3 Backend
+
+- Campo `fotoPerfil: string | null` en la entidad `User`
+- `UpdateUserDto` extiende `PartialType(CreateUserDto)` y añade explícitamente `fotoPerfil` (no estaba en el DTO original de creación)
+- `formatUser()` incluye `fotoPerfil` en la respuesta JSON
+
+### 21.4 Frontend
+
+- `UserModel` tiene la propiedad `String? profilePhoto` y un getter `bool get hasProfilePhoto`
+- En `DashboardPage` el `CircleAvatar` usa `backgroundImage: NetworkImage(user.profilePhoto!)` si existe, o muestra la inicial si no
+- En `AdminUsersPage` se muestra la foto de cada usuario en su tarjeta correspondiente
+
+### 21.5 Notas técnicas
+
+- Las fotos se redimensionan en el cliente antes de subir (máximo 512x512) para reducir bandwidth
+- Si el usuario está bloqueado, en el panel admin se muestra el icono de bloqueo en vez de la foto
+- El endpoint `/files/incident` no requiere autenticación (riesgo residual documentado)
+
+---
+
+## 22. WEB DE ADMINISTRACIÓN
+
+La aplicación cuenta con un **tercer cliente** además de la app móvil: un **panel web** desarrollado en Next.js destinado al uso del administrador desde un navegador. Está pensado para gestión avanzada (tablas grandes, filtros combinados, exportación rápida) que se hace incómoda en pantalla pequeña.
+
+### 22.1 Stack tecnológico
+
+| Tecnología | Versión | Para qué |
+|------------|---------|----------|
+| Next.js | 14.2 | Framework React con App Router y SSR |
+| React | 18 | Librería de UI |
+| TypeScript | 5.x | Tipado estático |
+| Tailwind CSS | 3.4 | Estilos utilitarios |
+| Axios | 1.15 | Cliente HTTP equivalente a Dio |
+| Recharts | 3.8 | Gráficos del dashboard (equivalente a fl_chart) |
+| js-cookie | 3.0 | Lectura/escritura de cookies para el JWT |
+
+### 22.2 Estructura del proyecto
+
+```
+web_incidencias/
+├── app/                            # App Router de Next.js
+│   ├── layout.tsx                  # Layout raíz con AuthProvider
+│   ├── page.tsx                    # Redirige a /dashboard
+│   ├── login/page.tsx              # Login exclusivo de admins
+│   ├── dashboard/
+│   │   ├── layout.tsx              # Usa AdminLayout
+│   │   └── page.tsx                # KPIs + 3 gráficos
+│   ├── incidents/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx                # Tabla con filtros + edición masiva
+│   │   └── [id]/page.tsx           # Detalle de incidencia
+│   └── users/
+│       ├── layout.tsx
+│       └── page.tsx                # Gestión de usuarios
+├── components/
+│   ├── AdminLayout.tsx             # Layout común con sidebar + header + guard
+│   ├── Sidebar.tsx                 # Navegación lateral
+│   ├── Header.tsx                  # Barra superior con info usuario y logout
+│   ├── StatsCard.tsx               # Tarjeta KPI
+│   ├── StatusBadge.tsx             # Badge coloreado por estado
+│   ├── PriorityBadge.tsx           # Badge coloreado por prioridad
+│   ├── StatusChart.tsx             # PieChart de Recharts (donut por estado)
+│   ├── PriorityChart.tsx           # BarChart por prioridad
+│   ├── MonthlyChart.tsx            # AreaChart evolución mensual
+│   └── ConfirmDialog.tsx           # Modal de confirmación
+├── hooks/
+│   └── useAuth.tsx                 # Context API + hook de autenticación
+├── services/
+│   ├── api.ts                      # Axios + interceptores JWT
+│   ├── auth.service.ts             # Login, logout, restoreSession
+│   ├── incidents.service.ts        # CRUD incidencias
+│   └── users.service.ts            # Gestión usuarios
+├── middleware.ts                   # Protección de rutas a nivel de Next.js
+├── next.config.mjs                 # Rewrites de API + imágenes Cloudinary
+├── tailwind.config.ts              # Colores corporativos
+└── public/logo.png
+```
+
+### 22.3 Páginas implementadas
+
+#### /login
+- Email + contraseña con toggle de visibilidad
+- Llama a `POST /users/login`
+- Después hace `GET /users/{id}` para obtener el rol
+- **Si el rol no es admin → rechaza el acceso y limpia la sesión** (la web es exclusiva de administradores)
+- Spinner durante la autenticación
+
+#### /dashboard
+- 4 tarjetas KPI: total, pendientes, en progreso, resueltas
+- Donut chart por estado (Recharts `PieChart`)
+- Bar chart por prioridad (Recharts `BarChart`)
+- Area chart de evolución mensual de los últimos 6 meses (Recharts `AreaChart`)
+- Todos los cálculos se hacen en cliente a partir de `GET /incidents`
+
+#### /incidents
+- **Tabla paginada** con 15 incidencias por página
+- **Filtros combinados**: búsqueda por texto, estado, prioridad
+- **Ordenación clickable** por columnas (fecha creación, fecha actualización, ascendente/descendente)
+- **Edición en línea**: selectores de estado y prioridad directamente en cada fila
+- **Sistema de cambios pendientes**: las modificaciones se acumulan en estado local y se envían al backend pulsando "Guardar cambios"
+- **Indicador visual** de campos modificados (marcados en naranja)
+- **Botón "Descartar cambios"** para revertir
+- **Exportación a Excel** con los filtros aplicados
+
+#### /incidents/[id]
+- Datos completos de la incidencia (título, descripción, dirección, coordenadas)
+- **Galería de imágenes** en grid con modal de ampliación
+- **Timeline de comentarios** ordenado por fecha
+- **Formulario** para añadir nuevos comentarios
+- **Panel lateral** con controles de estado y prioridad
+- **Botón eliminar** con `ConfirmDialog`
+
+#### /users
+- Tabla con foto de perfil, nombre, email, rol, estado y nº incidencias
+- **Filtros**: búsqueda por nombre/email, filtro por rol
+- **Edición masiva**: cambiar rol, bloquear/desbloquear, marcar para eliminar — todo con cambios pendientes
+- **Filas tachadas en rojo** para usuarios marcados para eliminar
+- **Botón "Guardar cambios"** que dispara todas las operaciones en lote
+- **Exportación a Excel**
+
+### 22.4 Sistema de autenticación
+
+La web reutiliza al 100% los endpoints del backend. Particularidades:
+
+**Almacenamiento del JWT**: en cookies (`access_token` y `user_id`) en vez de `localStorage`. Esto es **necesario** porque el `middleware.ts` de Next.js se ejecuta en el servidor, donde no existe `localStorage` — solo se pueden leer cookies.
+
+**Tres niveles de protección**:
+
+1. **`middleware.ts`** (servidor): Comprueba si la cookie `access_token` existe antes de servir cualquier ruta protegida. Si no existe, redirige a `/login` antes incluso de que se renderice el componente. Es el equivalente al `redirect` global del `GoRouter` de Flutter.
+
+2. **`AdminLayout`** (cliente): Comprueba si `useAuth()` tiene un `user`. Si no, redirige a `/login`. Esto cubre el caso en el que la cookie existe pero el contexto aún no se ha cargado.
+
+3. **Interceptor de Axios**: Si cualquier petición devuelve `401 Unauthorized` (token expirado o inválido), se limpian las cookies y se redirige a `/login`. Esto garantiza un cierre de sesión automático cuando el token caduca.
+
+**Filtro de rol**: El `AuthProvider` solo acepta usuarios con `rol === 'admin'`. Si un ciudadano intenta loguearse, la sesión se limpia y se muestra un error.
+
+### 22.5 Solución del problema de CORS
+
+El backend está en `https://backendincidenciasnest.onrender.com` y la web se ejecuta en otro dominio. Por defecto, los navegadores bloquean las peticiones HTTP entre dominios distintos (política CORS). Habría dos soluciones:
+
+1. Configurar CORS en el backend (cambios en NestJS)
+2. **Usar un rewrite de Next.js** (cero cambios en backend) — esta es la elegida
+
+En `next.config.mjs`:
+```javascript
+async rewrites() {
+  return [{
+    source: '/api/v1/:path*',
+    destination: 'https://backendincidenciasnest.onrender.com/api/v1/:path*',
+  }];
+}
+```
+
+Cuando la web hace una petición a `/api/v1/incidents`, Next.js la captura **en el servidor** y la reenvía al backend real. Como la petición sale del servidor (no del navegador), CORS no aplica.
+
+### 22.6 Sistema de cambios pendientes (batch save)
+
+A diferencia de la app móvil, donde cada acción dispara una petición HTTP inmediata, la web admin acumula los cambios en estado local y los envía en lote al pulsar "Guardar cambios":
+
+**Ventajas:**
+- Permite editar varios usuarios o incidencias y revertir antes de guardar
+- Reduce el número de peticiones al backend (importante en Render con cold start)
+- Mejor UX para gestión masiva
+
+**Implementación:**
+- Las celdas editables tienen estado local controlado
+- Las celdas modificadas se marcan visualmente (color naranja)
+- Al guardar, se itera sobre los cambios y se hacen todas las peticiones `PATCH` y `DELETE`
+- Después se recarga la lista desde el backend para sincronizar
+
+### 22.7 Diseño y consistencia visual
+
+La web reutiliza la **misma paleta de colores corporativa** que la app:
+- Primary: `#2C5F7C` (azul petróleo)
+- Accent: `#C4704B` (terracota)
+- Background: `#FAF7F2` (crema)
+- Estados: naranja (pendiente), azul (en progreso), verde (resuelto), rojo (rechazada)
+
+Tipografía: **Poppins** (la misma que la app).
+
+Esta coherencia visual hace que un admin que use ambas plataformas (móvil y web) tenga una experiencia unificada.
+
+### 22.8 Despliegue
+
+- **Plataforma**: Vercel (de los mismos creadores de Next.js)
+- **Auto-deploy**: cada push a `main` en GitHub dispara un nuevo deploy
+- **Plan gratuito**: builds ilimitados, dominio `*.vercel.app`
+- **Variable de entorno**: `NEXT_PUBLIC_API_URL` (URL del backend)
+
+### 22.9 Repositorio
+
+- GitHub: [web-incidencias-next](https://github.com/DanielMVenzala/web-incidencias-next)
+- Independiente de los repos del backend y del frontend móvil
+- Los tres proyectos consumen la misma API REST del backend
+
+---
+
+## 23. DECISIONES TÉCNICAS RELEVANTES
+
+Esta sección recoge las decisiones técnicas no triviales tomadas durante el desarrollo, con su contexto y justificación. Es de las secciones más valiosas para la defensa del TFG porque demuestra capacidad de análisis y resolución de problemas.
+
+### 23.1 Resend en lugar de Nodemailer/SMTP
+
+**Problema**: El plan gratuito de Render bloquea conexiones SMTP salientes en los puertos 25, 465 y 587. Esto provoca un `Connection timeout` cuando se intenta enviar emails de activación con Nodemailer + Gmail.
+
+**Solución**: Migrar a Resend, que envía emails mediante una API HTTP. Las peticiones HTTP no están bloqueadas por Render. Se mantiene la misma lógica del servicio (`MailService`) pero el transporte cambia.
+
+### 23.2 Google Places Autocomplete enrutado por el backend
+
+**Problema**: La API Key de Google Maps está restringida al paquete Android (`com.example.front_incidencias`) + huella SHA-1. Esta restricción funciona para el `Maps SDK` (renderizado del mapa visual), pero **no** para llamadas HTTP directas a Geocoding y Places.
+
+**Solución**: Usar **dos API Keys distintas**:
+- Key 1: para Android (Maps SDK), restringida por paquete + SHA-1. Está en `AndroidManifest.xml`.
+- Key 2: para el backend (Geocoding + Places), restringida solo a esas dos APIs. Está en variable de entorno de Render.
+
+El frontend Flutter llama al backend (`GET /incidents/places/autocomplete`), y el backend llama a Google con la Key 2. Así nunca se expone una API Key sin restricción de plataforma.
+
+### 23.3 Reset de contraseña con formulario HTML servido por el backend
+
+**Alternativas evaluadas**:
+1. Deep links nativos en Android (configurar `intent-filter` para que el enlace abra la app)
+2. Página HTML servida por el backend con un formulario simple
+
+**Decisión**: Opción 2.
+
+**Razones**: Los deep links requieren configuración nativa (`intent-filter` en `AndroidManifest.xml`, validación de dominio con archivo `assetlinks.json` en el servidor) y son frágiles si la app no está instalada. La página HTML funciona en cualquier navegador, no requiere configuración adicional, y reutiliza la infraestructura de NestJS para servir la vista.
+
+### 23.4 Validación geográfica con la fórmula Haversine
+
+**Problema**: Aunque la query a Google Geocoding incluye `components=country:ES`, eso solo filtra por país. Un usuario podría introducir una dirección de Madrid o Sevilla y la geocodificación devolvería coordenadas válidas, creando una incidencia que aparecería fuera de Martos en el mapa.
+
+**Solución**: Después de obtener las coordenadas, calcular la distancia al centro de Martos (37.7210, -3.9720) usando la fórmula Haversine. Si la distancia supera 5 km, se rechaza la dirección con error 400.
+
+**Por qué Haversine y no distancia euclidiana**: Las coordenadas geográficas no son cartesianas. La distancia euclidiana entre dos puntos cercanos en latitud/longitud sería incorrecta porque la Tierra es una esfera. Haversine tiene en cuenta la curvatura.
+
+### 23.5 Cookies en la web admin (en vez de localStorage)
+
+**Problema**: El `middleware.ts` de Next.js se ejecuta **en el servidor** antes de que la página llegue al navegador. En el servidor no existe `localStorage` (es una API del navegador).
+
+**Solución**: Almacenar el JWT en cookies. El servidor sí puede leer las cookies de la petición HTTP entrante (`request.cookies.get('access_token')`). Así el middleware puede comprobar si hay sesión antes de renderizar la página.
+
+### 23.6 Rewrites de Next.js para evitar CORS
+
+**Problema**: La web está en un dominio (Vercel) y el backend en otro (Render). Los navegadores bloquean peticiones HTTP entre dominios distintos por seguridad (CORS).
+
+**Alternativas**:
+1. Configurar CORS en el backend con `app.enableCors()`
+2. Usar rewrites en Next.js para que las peticiones salgan del servidor
+
+**Decisión**: Opción 2.
+
+**Razones**: La opción 1 requiere modificar el backend, que también es consumido por la app Flutter (donde CORS no aplica porque no es un navegador). Habría que añadir whitelisting de dominios. La opción 2 es 4 líneas en `next.config.mjs` y no toca el backend para nada.
+
+### 23.7 Token de un solo uso para activación y reset
+
+**Decisión**: Tanto el `activationToken` como el `resetToken` se borran de la BD tras su uso (`user.resetToken = null`).
+
+**Por qué**: Si un atacante intercepta uno de estos enlaces, lo único que puede hacer es usarlo una vez. Una vez usado, queda invalidado. Además, el `resetToken` tiene una expiración temporal de 1 hora.
+
+### 23.8 Mitigación contra enumeración de usuarios
+
+**Problema**: En el endpoint `/users/forgot-password`, si devolviéramos `404 "Usuario no encontrado"` cuando el email no existe, un atacante podría enumerar emails registrados (probar miles de emails y ver cuáles existen).
+
+**Solución**: Devolver siempre el mismo mensaje genérico ("Si el email existe, recibirás un enlace...") tanto si el usuario existe como si no. El atacante no puede distinguir.
+
+### 23.9 Dos roles solo (sin granularidad)
+
+**Decisión**: Solo existen los roles `usuario` y `admin`, sin niveles intermedios (moderador, supervisor, etc.).
+
+**Razón**: KISS (Keep It Simple, Stupid). Para el caso de uso real (un ayuntamiento pequeño), no hay necesidad de roles intermedios. Si en un futuro se necesitan, el sistema de guards (`@RoleProtected`) ya soporta arrays de roles, así que la migración sería trivial.
+
+### 23.10 Sistema de cambios pendientes en la web
+
+**Problema**: Si cada cambio en la tabla de la web (cambiar estado de una incidencia, bloquear un usuario) disparase una petición HTTP inmediata, el admin haría decenas de peticiones al editar varios elementos. En Render con cold start, cada petición tras un periodo de inactividad tarda ~30s.
+
+**Solución**: Acumular los cambios en estado local y enviarlos en lote al pulsar "Guardar cambios". Esto reduce las peticiones, mejora la UX (se puede revertir), y reduce el coste de cold start.
+
+---
+
+## 24. TRABAJO FUTURO Y MEJORAS
+
+Posibles ampliaciones documentadas como roadmap:
+
+### 24.1 Seguridad
+
+- **Rate limiting** en login y registro con `@nestjs/throttler` para prevenir fuerza bruta
+- **Refresh tokens** además del access token, para sesiones más seguras
+- **Verificación de propiedad en `PATCH /users/:id`**: comprobar que `req.user.id === params.id` para evitar que un usuario modifique a otro
+- **Autenticación en `POST /incidents`** y `POST /files/incident`: actualmente públicos
+- **Logs de auditoría**: registrar quién cambia qué y cuándo
+
+### 24.2 Funcionalidades
+
+- **Notificaciones push** al usuario cuando el admin cambia el estado de su incidencia
+- **Comentarios bidireccionales**: permitir al ciudadano responder a las notas del admin
+- **Categorías de incidencias** (limpieza, alumbrado, mobiliario...) para mejorar el filtrado
+- **Área de cobertura configurable**: actualmente 5 km hardcodeado. Hacerlo configurable por admin
+- **Modo oscuro en la web admin** (actualmente solo claro)
+
+### 24.3 Tests automatizados
+
+- Tests unitarios de los servicios de NestJS con Jest
+- Tests de integración de los endpoints con SuperTest
+- Widget tests en Flutter con `flutter_test`
+- Tests E2E en la web con Playwright
+
+### 24.4 Despliegue
+
+- Migración del backend a un plan de pago en Render (sin cold start)
+- CDN para imágenes (aunque Cloudinary ya cumple esa función)
+- Métricas y alertas (Sentry, LogRocket, etc.)
+
+### 24.5 UX
+
+- Onboarding interactivo en la primera apertura de la app
+- Skeleton screens en lugar de `CircularProgressIndicator`
+- Pull-to-refresh con animación más cuidada
+
+---
+
+## 25. CONCLUSIONES
+
+### 25.1 Objetivos cumplidos
+
+El proyecto Martos Arregla cumple en su totalidad los objetivos planteados al inicio:
+
+- Plataforma funcional de gestión de incidencias urbanas, desplegada y operativa
+- App móvil nativa para Android (Flutter) con todas las funcionalidades para el ciudadano
+- Panel web (Next.js) para gestión avanzada del administrador
+- Backend REST (NestJS) que da servicio a ambos clientes
+- Persistencia en PostgreSQL con TypeORM
+- Servicios externos integrados: Cloudinary, Google Maps Platform, Resend
+- Seguridad implementada en múltiples capas
+
+### 25.2 Aprendizajes técnicos
+
+Durante el desarrollo se ha trabajado con tecnologías y conceptos no abordados en el ciclo formativo:
+
+- Frameworks modernos de **Flutter** (Dart) y **NestJS** (TypeScript)
+- Despliegue en la nube con **Render**, **Neon**, **Vercel** y **Cloudinary**
+- API REST con autenticación **JWT** y guards personalizados
+- **ORM** (TypeORM) y migraciones automáticas de esquema
+- **Validación geográfica** con la fórmula Haversine
+- **Generación de informes Excel** desde el servidor con `exceljs`
+- **Geocodificación y autocompletado** con Google Maps Platform
+- Diseño responsive y multi-cliente con la **misma API**
+
+### 25.3 Dificultades superadas
+
+- **Bloqueo SMTP en Render**: resuelto migrando a Resend (API HTTP)
+- **Restricción de la API Key de Google Maps a Android**: resuelto usando dos keys distintas y enrutando peticiones por el backend
+- **CORS entre la web y el backend**: resuelto con rewrites de Next.js
+- **Configuración de iconos y nombre de la app**: resuelto con `flutter_launcher_icons` y `AndroidManifest.xml`
+- **Restauración de sesión con tokens caducados**: resuelto con un timeout global y limpieza automática
+
+### 25.4 Valor académico y profesional
+
+El proyecto demuestra capacidad para:
+
+- Trabajar con **múltiples lenguajes y stacks** simultáneamente (Dart, TypeScript, SQL)
+- Desarrollar **tres clientes** independientes (móvil, web, API) que consumen la misma fuente
+- Tomar **decisiones técnicas** justificadas frente a problemas reales
+- **Desplegar en la nube** y gestionar servicios de producción
+- Implementar **medidas de seguridad** profesionales
+- Documentar el proyecto de forma estructurada
+
+### 25.5 Cierre
+
+Martos Arregla es un proyecto completo, funcional y desplegado, que va más allá de los requisitos típicos de un TFG de Desarrollo de Aplicaciones Multiplataforma. La combinación de app móvil + panel web + API REST en producción ofrece una experiencia de desarrollo cercana a un entorno profesional real, y deja una base sólida sobre la que escalar funcionalidades futuras.
