@@ -47,6 +47,7 @@ export class IncidentsController {
   }
 
   @Post()
+  @UseGuards(AuthGuard())
   @ApiResponse({
     status: 201,
     description: 'Incident was created',
@@ -69,6 +70,7 @@ export class IncidentsController {
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard())
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateIncidentDto: UpdateIncidentDto,
@@ -79,6 +81,7 @@ export class IncidentsController {
   // ─── Comentarios ─────────────────────────────────────────
 
   @Post(':id/comments')
+  @UseGuards(AuthGuard())
   @ApiResponse({ status: 201, description: 'Comment added' })
   addComment(
     @Param('id', ParseUUIDPipe) id: string,

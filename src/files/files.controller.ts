@@ -8,8 +8,10 @@ import {
   Delete,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
   BadRequestException,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { FilesService } from './files.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { fileFilter } from './helpers/fileFilter';
@@ -30,6 +32,7 @@ export class FilesController {
   ) {}
 
   @Post('incident')
+  @UseGuards(AuthGuard())
   //Interceptor que intercepta las solicitudes y las respuestas
   @UseInterceptors(
     FileInterceptor('file', {

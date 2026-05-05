@@ -187,6 +187,7 @@ export class UsersController {
   })
   @ApiResponse({ status: 500, description: 'User not found' })
   @Get(':id')
+  @UseGuards(AuthGuard())
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
