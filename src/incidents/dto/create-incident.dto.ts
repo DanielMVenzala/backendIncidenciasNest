@@ -12,8 +12,8 @@ export class CreateIncidentDto {
     nullable: false,
     minLength: 10,
   })
-  @IsString()
-  @MinLength(10)
+  @IsString({ message: 'El título debe ser un texto' })
+  @MinLength(10, { message: 'El título debe tener al menos 10 caracteres' })
   titulo: string;
 
   @ApiProperty({
@@ -21,8 +21,8 @@ export class CreateIncidentDto {
     nullable: false,
     minLength: 10,
   })
-  @IsString()
-  @MinLength(10)
+  @IsString({ message: 'La descripción debe ser un texto' })
+  @MinLength(10, { message: 'La descripción debe tener al menos 10 caracteres' })
   descripcion: string;
 
   @ApiProperty({
@@ -30,8 +30,8 @@ export class CreateIncidentDto {
     nullable: false,
     minLength: 10,
   })
-  @IsString()
-  @MinLength(10)
+  @IsString({ message: 'La dirección debe ser un texto' })
+  @MinLength(10, { message: 'La dirección debe tener al menos 10 caracteres' })
   direccion: string;
 
   @ApiProperty({
@@ -41,8 +41,8 @@ export class CreateIncidentDto {
   @Transform(({ value }: { value: string | string[] }) =>
     typeof value === 'string' ? [value] : value,
   )
-  @IsArray()
-  @IsString({ each: true })
+  @IsArray({ message: 'Las imágenes deben ser una lista' })
+  @IsString({ each: true, message: 'Cada imagen debe ser un texto' })
   imagenes: string[];
 
   @ApiProperty({
@@ -52,11 +52,11 @@ export class CreateIncidentDto {
     required: false,
   })
   @IsOptional()
-  @IsEnum(IncidentPriority)
+  @IsEnum(IncidentPriority, { message: 'La prioridad no es válida' })
   prioridad?: IncidentPriority;
 
   //Cuando se crea un incidente en postman se introduce un string(email) no un User
   @ApiProperty()
-  @IsString()
+  @IsString({ message: 'El usuario debe ser un texto' })
   usuario: string;
 }
