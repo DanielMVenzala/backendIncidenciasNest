@@ -235,11 +235,14 @@ export class UsersService {
       select: { email: true, clave: true, id: true, activo: true, bloqueado: true },
     });
 
+    // Mensaje genérico para evitar la enumeración de usuarios:
+    // un atacante no debe poder distinguir entre "el email no existe"
+    // y "la contraseña es incorrecta".
     if (!user)
-      throw new UnauthorizedException('Este usuario no existe, regístrate para comenzar');
+      throw new UnauthorizedException('Email o contraseña incorrectos');
 
     if (!bcrypt.compareSync(clave, user.clave))
-      throw new UnauthorizedException('La contraseña no es correcta');
+      throw new UnauthorizedException('Email o contraseña incorrectos');
 
     if (user.bloqueado)
       throw new UnauthorizedException('El administrador ha bloqueado su cuenta. Por favor, contacte con el área responsable.');
