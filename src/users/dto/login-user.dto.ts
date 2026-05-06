@@ -13,18 +13,17 @@ export class LoginUserDto {
     description: 'User email',
     nullable: false,
   })
-  @IsEmail()
+  @IsEmail({}, { message: 'El email no es válido' })
   email: string;
 
   @ApiProperty({
     description: 'User password',
     nullable: false,
   })
-  @IsString()
-  @MinLength(8)
+  @IsString({ message: 'La contraseña debe ser un texto' })
+  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
   @Matches(/(?:(?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-    message:
-      'The password must have a Uppercase, lowercase letter and a number',
+    message: 'La contraseña debe tener al menos una mayúscula, una minúscula y un número',
   })
   clave: string;
 }
