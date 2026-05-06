@@ -23,6 +23,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { UserRoleGuard } from './guards/user-role/user-role.guard';
 import { RoleProtected } from './decorators/role-protected/role-protected.decorator';
 import { ValidRoles } from './interfaces/valid-roles';
+import { GetUser } from './decorators/get-user.decorator';
 import { ReportsService } from 'src/reports/reports.service';
 import type { Response } from 'express';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -219,12 +220,12 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @RoleProtected(ValidRoles.admin)
-  @UseGuards(AuthGuard(), UserRoleGuard)
+  @UseGuards(AuthGuard())
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @GetUser() currentUser: User,
   ) {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.update(id, updateUserDto, currentUser);
   }
 }

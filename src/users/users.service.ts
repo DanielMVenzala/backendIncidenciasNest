@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -193,7 +194,20 @@ export class UsersService {
     };
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto, currentUser: User) {
+    const isAdmin = currentUser.rol === 'admin';
+    const isOwner = currentUser.id === id;
+
+    // Solo admin o el propio usuario pueden modificar el perfil
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException('No tienes permisos para modificar este perfil');
+    }
+
+    // Solo el admin puede cambiar el rol
+    if (updateUserDto.rol !== undefined && !isAdmin) {
+      throw new ForbiddenException('Solo un administrador puede cambiar el rol');
+    }
+
     const user = await this.userRepository.preload({
       //Le digo a typeorm que busque en la bdd por id y cargue
       //todas las propiedades que estén en ese updateUserDto
