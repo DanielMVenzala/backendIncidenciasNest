@@ -27,7 +27,7 @@ export class MailService {
 
     await this.resend.emails.send({
       from: 'Martos Arregla <onboarding@resend.dev>',
-      reply_to: 'onboarding@resend.dev',
+      replyTo: 'onboarding@resend.dev',
       to: [to],
       subject: 'Activa tu cuenta — Martos Arregla',
       text: textBody,
@@ -70,7 +70,7 @@ export class MailService {
 
     await this.resend.emails.send({
       from: 'Martos Arregla <onboarding@resend.dev>',
-      reply_to: 'onboarding@resend.dev',
+      replyTo: 'onboarding@resend.dev',
       to: [to],
       subject: 'Restablecer contraseña — Martos Arregla',
       text: textBody,
