@@ -23,10 +23,14 @@ export class MailService {
     // Construir URL de activación (HOST_API apunta a la URL de Render en producción)
     const activationUrl = `${process.env.HOST_API || 'http://localhost:3000/api/v1'}/users/activate/${token}`;
 
+    const textBody = `Hola ${nombre},\n\nGracias por registrarte. Para activar tu cuenta, abre este enlace:\n\n${activationUrl}\n\nSi no has creado esta cuenta, ignora este correo.`;
+
     await this.resend.emails.send({
       from: 'Martos Arregla <onboarding@resend.dev>',
-      to,
+      reply_to: 'onboarding@resend.dev',
+      to: [to],
       subject: 'Activa tu cuenta — Martos Arregla',
+      text: textBody,
       html: `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #FAF7F2; border-radius: 16px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #2C5F7C, #4A8BAD); padding: 32px 24px; text-align: center;">
@@ -62,10 +66,14 @@ export class MailService {
   async sendResetPasswordEmail(to: string, nombre: string, token: string) {
     const resetUrl = `${process.env.HOST_API || 'http://localhost:3000/api/v1'}/users/reset-password/${token}`;
 
+    const textBody = `Hola ${nombre},\n\nHas solicitado restablecer tu contraseña. Abre este enlace para continuar:\n\n${resetUrl}\n\nEste enlace caduca en 1 hora. Si no lo has solicitado, ignora este correo.`;
+
     await this.resend.emails.send({
       from: 'Martos Arregla <onboarding@resend.dev>',
-      to,
+      reply_to: 'onboarding@resend.dev',
+      to: [to],
       subject: 'Restablecer contraseña — Martos Arregla',
+      text: textBody,
       html: `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #FAF7F2; border-radius: 16px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #2C5F7C, #4A8BAD); padding: 32px 24px; text-align: center;">

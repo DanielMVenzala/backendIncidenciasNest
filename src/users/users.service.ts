@@ -46,15 +46,17 @@ export class UsersService {
 
       // Enviar email de activación en segundo plano (no bloquea la respuesta)
       console.log(`[MAIL] Enviando email de activación a ${newUser.email}...`);
-      this.mailService.sendActivationEmail(
-        newUser.email,
-        newUser.nombre,
-        activationToken,
-      ).then(() => {
-        console.log(`[MAIL] Email enviado correctamente a ${newUser.email}`);
-      }).catch((err) => {
-        console.error(`[MAIL] Error al enviar email a ${newUser.email}:`, err.message);
-      });
+      this.mailService
+        .sendActivationEmail(newUser.email, newUser.nombre, activationToken)
+        .then(() => {
+          console.log(`[MAIL] Email enviado correctamente a ${newUser.email}`);
+        })
+        .catch((err) => {
+          console.error(
+            `[MAIL] Error al enviar email a ${newUser.email}:`,
+            err,
+          );
+        });
 
       return {
         id: newUser.id,
@@ -68,7 +70,9 @@ export class UsersService {
   }
 
   async activateAccount(token: string) {
-    const user = await this.userRepository.findOneBy({ activationToken: token });
+    const user = await this.userRepository.findOneBy({
+      activationToken: token,
+    });
 
     if (!user) {
       throw new BadRequestException('Token de activación inválido');
@@ -78,7 +82,9 @@ export class UsersService {
     user.activationToken = null;
     await this.userRepository.save(user);
 
-    return { mensaje: 'Cuenta activada correctamente. Ya puedes iniciar sesión.' };
+    return {
+      mensaje: 'Cuenta activada correctamente. Ya puedes iniciar sesión.',
+    };
   }
 
   /**
@@ -86,11 +92,16 @@ export class UsersService {
    * Por seguridad, devuelve el mismo mensaje aunque el email no exista.
    */
   async forgotPassword(email: string) {
-    const user = await this.userRepository.findOneBy({ email: email.toLowerCase().trim() });
+    const user = await this.userRepository.findOneBy({
+      email: email.toLowerCase().trim(),
+    });
 
     // No revelar si el email existe o no (seguridad)
     if (!user) {
-      return { mensaje: 'Si el email existe, recibirás un enlace para restablecer tu contraseña.' };
+      return {
+        mensaje:
+          'Si el email existe, recibirás un enlace para restablecer tu contraseña.',
+      };
     }
 
     const resetToken = uuid();
@@ -101,9 +112,14 @@ export class UsersService {
     // Envío en segundo plano (no bloquea la respuesta)
     this.mailService
       .sendResetPasswordEmail(user.email, user.nombre, resetToken)
-      .catch((err) => console.error('[MAIL] Error al enviar email de reset:', err.message));
+      .catch((err) =>
+        console.error('[MAIL] Error al enviar email de reset:', err.message),
+      );
 
-    return { mensaje: 'Si el email existe, recibirás un enlace para restablecer tu contraseña.' };
+    return {
+      mensaje:
+        'Si el email existe, recibirás un enlace para restablecer tu contraseña.',
+    };
   }
 
   /**
@@ -118,16 +134,24 @@ export class UsersService {
     }
 
     if (!user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
-      throw new BadRequestException('El enlace ha caducado. Solicita uno nuevo.');
+      throw new BadRequestException(
+        'El enlace ha caducado. Solicita uno nuevo.',
+      );
     }
 
     // Hashear nueva contraseña manualmente (el hook BeforeUpdate también lo hace)
-    user.clave = await bcrypt.hash(nuevaClave, +process.env.BCRYPT_SALT_ROUNDS!);
+    user.clave = await bcrypt.hash(
+      nuevaClave,
+      +process.env.BCRYPT_SALT_ROUNDS!,
+    );
     user.resetToken = null;
     user.resetTokenExpiry = null;
     await this.userRepository.save(user);
 
-    return { mensaje: 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.' };
+    return {
+      mensaje:
+        'Contraseña actualizada correctamente. Ya puedes iniciar sesión.',
+    };
   }
 
   async findAll(query: FindUsersQueryDto) {
@@ -148,7 +172,8 @@ export class UsersService {
       where: { id },
       relations: ['incidentes'],
     });
-    if (!user) throw new NotFoundException(`Usuario con id ${id} no encontrado`);
+    if (!user)
+      throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     return user;
   }
 
@@ -200,12 +225,16 @@ export class UsersService {
 
     // Solo admin o el propio usuario pueden modificar el perfil
     if (!isAdmin && !isOwner) {
-      throw new ForbiddenException('No tienes permisos para modificar este perfil');
+      throw new ForbiddenException(
+        'No tienes permisos para modificar este perfil',
+      );
     }
 
     // Solo el admin puede cambiar el rol
     if (updateUserDto.rol !== undefined && !isAdmin) {
-      throw new ForbiddenException('Solo un administrador puede cambiar el rol');
+      throw new ForbiddenException(
+        'Solo un administrador puede cambiar el rol',
+      );
     }
 
     const user = await this.userRepository.preload({
@@ -215,7 +244,8 @@ export class UsersService {
       ...updateUserDto,
     });
 
-    if (!user) throw new NotFoundException(`Usuario con id ${id} no encontrado`);
+    if (!user)
+      throw new NotFoundException(`Usuario con id ${id} no encontrado`);
 
     try {
       await this.userRepository.save(user);
@@ -246,7 +276,13 @@ export class UsersService {
 
     const user = await this.userRepository.findOne({
       where: { email },
-      select: { email: true, clave: true, id: true, activo: true, bloqueado: true },
+      select: {
+        email: true,
+        clave: true,
+        id: true,
+        activo: true,
+        bloqueado: true,
+      },
     });
 
     // Mensaje genérico para evitar la enumeración de usuarios:
@@ -259,10 +295,14 @@ export class UsersService {
       throw new UnauthorizedException('Email o contraseña incorrectos');
 
     if (user.bloqueado)
-      throw new UnauthorizedException('El administrador ha bloqueado su cuenta. Por favor, contacte con el área responsable.');
+      throw new UnauthorizedException(
+        'El administrador ha bloqueado su cuenta. Por favor, contacte con el área responsable.',
+      );
 
     if (!user.activo)
-      throw new UnauthorizedException('Cuenta no activada. Revisa tu correo electrónico.');
+      throw new UnauthorizedException(
+        'Cuenta no activada. Revisa tu correo electrónico.',
+      );
 
     return {
       id: user.id,
@@ -282,9 +322,7 @@ export class UsersService {
     //para que muestre un error más concreto
     if (error.code === '23505') throw new BadRequestException(error.detail);
     this.logger.error(error);
-    throw new InternalServerErrorException(
-      'Error inesperado en el servidor',
-    );
+    throw new InternalServerErrorException('Error inesperado en el servidor');
   }
 
   // Crear usuario ya activo (sin email) — usado por el seed
