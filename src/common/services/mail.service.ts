@@ -25,38 +25,57 @@ export class MailService {
 
     const textBody = `Hola ${nombre},\n\nGracias por registrarte. Para activar tu cuenta, abre este enlace:\n\n${activationUrl}\n\nSi no has creado esta cuenta, ignora este correo.`;
 
-    await this.resend.emails.send({
-      from: 'Martos Arregla <onboarding@resend.dev>',
-      replyTo: 'onboarding@resend.dev',
-      to: [to],
-      subject: 'Activa tu cuenta — Martos Arregla',
-      text: textBody,
-      html: `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #FAF7F2; border-radius: 16px; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #2C5F7C, #4A8BAD); padding: 32px 24px; text-align: center;">
-            <h1 style="color: #fff; margin: 0; font-size: 22px;">Martos Arregla</h1>
-          </div>
-          <div style="padding: 32px 24px;">
-            <p style="font-size: 16px; color: #1A1A1A;">Hola <strong>${nombre}</strong>,</p>
-            <p style="font-size: 15px; color: #6B6B6B; line-height: 1.6;">
-              Gracias por registrarte. Para activar tu cuenta, pulsa el siguiente botón:
-            </p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${activationUrl}"
-                 style="background: #2C5F7C; color: #fff; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
-                Activar mi cuenta
-              </a>
-            </div>
-            <p style="font-size: 13px; color: #9E9E9E; line-height: 1.5;">
-              Si no has creado esta cuenta, ignora este correo.
-            </p>
-          </div>
-          <div style="background: #F0EDE6; padding: 16px 24px; text-align: center;">
-            <p style="font-size: 12px; color: #9E9E9E; margin: 0;">Ayuntamiento de Martos — Plataforma de incidencias</p>
-          </div>
-        </div>
-      `,
-    });
+    try {
+      console.log('📧 Enviando email a:', to);
+
+      const result = await this.resend.emails.send({
+        from: 'Martos Arregla <onboarding@resend.dev>',
+        replyTo: 'onboarding@resend.dev',
+        to: [to],
+        subject: 'Activa tu cuenta — Martos Arregla',
+        text: textBody,
+        html: `...`,
+      });
+
+      console.log('✅ RESEND RESULT:', JSON.stringify(result, null, 2));
+
+      return result;
+    } catch (error) {
+      console.error('❌ RESEND ERROR:', error);
+      throw error;
+    }
+    // await this.resend.emails.send({
+    //   from: 'Martos Arregla <onboarding@resend.dev>',
+    //   replyTo: 'onboarding@resend.dev',
+    //   to: [to],
+    //   subject: 'Activa tu cuenta — Martos Arregla',
+    //   text: textBody,
+    //   html: `
+    //     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #FAF7F2; border-radius: 16px; overflow: hidden;">
+    //       <div style="background: linear-gradient(135deg, #2C5F7C, #4A8BAD); padding: 32px 24px; text-align: center;">
+    //         <h1 style="color: #fff; margin: 0; font-size: 22px;">Martos Arregla</h1>
+    //       </div>
+    //       <div style="padding: 32px 24px;">
+    //         <p style="font-size: 16px; color: #1A1A1A;">Hola <strong>${nombre}</strong>,</p>
+    //         <p style="font-size: 15px; color: #6B6B6B; line-height: 1.6;">
+    //           Gracias por registrarte. Para activar tu cuenta, pulsa el siguiente botón:
+    //         </p>
+    //         <div style="text-align: center; margin: 28px 0;">
+    //           <a href="${activationUrl}"
+    //              style="background: #2C5F7C; color: #fff; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+    //             Activar mi cuenta
+    //           </a>
+    //         </div>
+    //         <p style="font-size: 13px; color: #9E9E9E; line-height: 1.5;">
+    //           Si no has creado esta cuenta, ignora este correo.
+    //         </p>
+    //       </div>
+    //       <div style="background: #F0EDE6; padding: 16px 24px; text-align: center;">
+    //         <p style="font-size: 12px; color: #9E9E9E; margin: 0;">Ayuntamiento de Martos — Plataforma de incidencias</p>
+    //       </div>
+    //     </div>
+    //   `,
+    // });
   }
 
   /**
@@ -68,37 +87,56 @@ export class MailService {
 
     const textBody = `Hola ${nombre},\n\nHas solicitado restablecer tu contraseña. Abre este enlace para continuar:\n\n${resetUrl}\n\nEste enlace caduca en 1 hora. Si no lo has solicitado, ignora este correo.`;
 
-    await this.resend.emails.send({
-      from: 'Martos Arregla <onboarding@resend.dev>',
-      replyTo: 'onboarding@resend.dev',
-      to: [to],
-      subject: 'Restablecer contraseña — Martos Arregla',
-      text: textBody,
-      html: `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #FAF7F2; border-radius: 16px; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #2C5F7C, #4A8BAD); padding: 32px 24px; text-align: center;">
-            <h1 style="color: #fff; margin: 0; font-size: 22px;">Martos Arregla</h1>
-          </div>
-          <div style="padding: 32px 24px;">
-            <p style="font-size: 16px; color: #1A1A1A;">Hola <strong>${nombre}</strong>,</p>
-            <p style="font-size: 15px; color: #6B6B6B; line-height: 1.6;">
-              Has solicitado restablecer tu contraseña. Pulsa el siguiente botón para crear una nueva:
-            </p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${resetUrl}"
-                 style="background: #2C5F7C; color: #fff; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
-                Restablecer contraseña
-              </a>
-            </div>
-            <p style="font-size: 13px; color: #9E9E9E; line-height: 1.5;">
-              Este enlace caduca en 1 hora. Si no has solicitado el cambio, ignora este correo.
-            </p>
-          </div>
-          <div style="background: #F0EDE6; padding: 16px 24px; text-align: center;">
-            <p style="font-size: 12px; color: #9E9E9E; margin: 0;">Ayuntamiento de Martos — Plataforma de incidencias</p>
-          </div>
-        </div>
-      `,
-    });
+    try {
+      console.log('📧 Enviando email a:', to);
+
+      const result = await this.resend.emails.send({
+        from: 'Martos Arregla <onboarding@resend.dev>',
+        replyTo: 'onboarding@resend.dev',
+        to: [to],
+        subject: 'Activa tu cuenta — Martos Arregla',
+        text: textBody,
+        html: `...`,
+      });
+
+      console.log('✅ RESEND RESULT:', JSON.stringify(result, null, 2));
+
+      return result;
+    } catch (error) {
+      console.error('❌ RESEND ERROR:', error);
+      throw error;
+    }
+    // await this.resend.emails.send({
+    //   from: 'Martos Arregla <onboarding@resend.dev>',
+    //   replyTo: 'onboarding@resend.dev',
+    //   to: [to],
+    //   subject: 'Restablecer contraseña — Martos Arregla',
+    //   text: textBody,
+    //   html: `
+    //     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #FAF7F2; border-radius: 16px; overflow: hidden;">
+    //       <div style="background: linear-gradient(135deg, #2C5F7C, #4A8BAD); padding: 32px 24px; text-align: center;">
+    //         <h1 style="color: #fff; margin: 0; font-size: 22px;">Martos Arregla</h1>
+    //       </div>
+    //       <div style="padding: 32px 24px;">
+    //         <p style="font-size: 16px; color: #1A1A1A;">Hola <strong>${nombre}</strong>,</p>
+    //         <p style="font-size: 15px; color: #6B6B6B; line-height: 1.6;">
+    //           Has solicitado restablecer tu contraseña. Pulsa el siguiente botón para crear una nueva:
+    //         </p>
+    //         <div style="text-align: center; margin: 28px 0;">
+    //           <a href="${resetUrl}"
+    //              style="background: #2C5F7C; color: #fff; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+    //             Restablecer contraseña
+    //           </a>
+    //         </div>
+    //         <p style="font-size: 13px; color: #9E9E9E; line-height: 1.5;">
+    //           Este enlace caduca en 1 hora. Si no has solicitado el cambio, ignora este correo.
+    //         </p>
+    //       </div>
+    //       <div style="background: #F0EDE6; padding: 16px 24px; text-align: center;">
+    //         <p style="font-size: 12px; color: #9E9E9E; margin: 0;">Ayuntamiento de Martos — Plataforma de incidencias</p>
+    //       </div>
+    //     </div>
+    //   `,
+    // });
   }
 }
